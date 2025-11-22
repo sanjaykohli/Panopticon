@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced Network & Privacy Analysis Tool">
+    <title>Panopticon | Advanced Privacy Diagnostics</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            /* --- Color System --- */
+            --bg-app: #050507;
+            --bg-panel: #0f0f12;
+            --bg-panel-hover: #18181b;
+            
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(255, 255, 255, 0.2);
+            
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-secondary: #ec4899; /* Pink/Magenta for Fingerprint */
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            --ease-premium: cubic-bezier(0.2, 0.0, 0.2, 1); 
+        }
+
+        /* --- Global Reset --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- CAMOUFLAGE MODE ENGINEERING --- */
+        /* Activated via JS button */
+        body.camouflage-active {
+            /* Force the low contrast background */
+            background-color: #080808 !important;
+            --bg-app: #080808;
+            --bg-panel: #080808;
+            
+            /* The "Invisible" Color Palette (#2a2a2a on #080808) */
+            --text-camouflaged: #2a2a2a;
+            --border-camouflaged: #1a1a1a;
+        }
+
+        /* 1. Hide everything by default in this mode */
+        body.camouflage-active .panel, 
+        body.camouflage-active header,
+        body.camouflage-active .warning-banner {
+            background-color: #080808 !important;
+            border-color: var(--border-camouflaged) !important;
+            box-shadow: none !important;
+            transition: all 0.3s ease;
+        }
+
+        body.camouflage-active h1, 
+        body.camouflage-active span, 
+        body.camouflage-active div, 
+        body.camouflage-active p,
+        body.camouflage-active button {
+            color: var(--text-camouflaged) !important;
+            transition: color 0.2s ease;
+        }
+
+        body.camouflage-active .badge {
+            background: #111 !important;
+            color: #333 !important;
+        }
+
+        /* Dim the visualizers to be barely visible */
+        body.camouflage-active canvas {
+            opacity: 0.1;
+            filter: grayscale(100%);
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        /* 2. THE REVEAL: "Only where it hovers that part is shown" */
+        /* When hovering specific containers, we restore the original variables implicitly by unsetting important or forcing white */
+        
+        body.camouflage-active .panel:hover,
+        body.camouflage-active header:hover {
+            background-color: #0f0f12 !important; /* Restore dark panel bg */
+            border-color: #444 !important;
+            z-index: 10;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            transform: scale(1.005);
+        }
+
+        /* Restore text inside hovered element */
+        body.camouflage-active .panel:hover *,
+        body.camouflage-active header:hover * {
+            color: #f8fafc !important; /* Restore bright white text */
+        }
+        
+        /* Restore secondary text specific colors */
+        body.camouflage-active .panel:hover .data-key,
+        body.camouflage-active .panel:hover .header-subtitle {
+             color: #94a3b8 !important;
+        }
+
+        /* Restore Badges on hover */
+        body.camouflage-active .panel:hover .badge-red { background: rgba(239, 68, 68, 0.15) !important; color: var(--accent-danger) !important; }
+        body.camouflage-active .panel:hover .badge-yellow { background: rgba(245, 158, 11, 0.15) !important; color: var(--accent-warning) !important; }
+        body.camouflage-active .panel:hover .badge-green { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent-success) !important; }
+
+        /* Restore Canvas on hover */
+        body.camouflage-active .panel:hover canvas {
+            opacity: 1;
+            filter: grayscale(0%);
+        }
+
+        /* ------------------------------------- */
+
+        /* --- Warning Banner --- */
+        .warning-banner {
+            background: rgba(239, 68, 68, 0.15);
+            border-bottom: 1px solid var(--accent-danger);
+            color: #fca5a5;
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            z-index: 100;
+        }
+
+        /* --- Layout --- */
+        .layout {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* --- Header --- */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .header-title h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .header-subtitle { color: var(--text-tertiary); font-size: 0.9rem; }
+
+        .header-actions { display: flex; gap: 1rem; }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .btn-ghost:hover { background: var(--bg-panel-hover); color: var(--text-primary); border-color: var(--text-tertiary); }
+        
+        /* Camouflage Button Special Style */
+        .btn-camo {
+            border-color: #444;
+            color: #888;
+        }
+        .btn-camo:hover {
+            color: #fff;
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+
+        /* --- Grid System --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+        .col-3 { grid-column: span 3; }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+        .col-8 { grid-column: span 8; }
+        .col-9 { grid-column: span 9; }
+        .col-12 { grid-column: span 12; }
+
+        @media (max-width: 1024px) { .col-3 { grid-column: span 6; } .col-4 { grid-column: span 6; } }
+        @media (max-width: 768px) { .col-3, .col-4, .col-6, .col-8, .col-9 { grid-column: span 12; } }
+
+        /* --- Panels --- */
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            transition: border-color 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel:hover { border-color: var(--border-active); }
+        
+        .panel.danger-glow { box-shadow: 0 0 20px rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); }
+        .panel.success-glow { box-shadow: 0 0 20px rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+        .panel-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- Data Typography --- */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .data-row:last-child { border-bottom: none; }
+        .data-key { font-size: 0.85rem; color: var(--text-secondary); }
+        .data-val { font-size: 0.85rem; color: var(--text-primary); font-family: var(--font-mono); text-align: right; }
+        
+        .mono-highlight {
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-primary);
+        }
+        .risk-highlight { color: var(--accent-danger); }
+
+        /* --- Risk Badges --- */
+        .badge {
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); }
+        .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); }
+
+        /* --- Canvas Visualizers --- */
+        .canvas-container {
+            background: #000;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 1rem;
+            height: 100px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .canvas-label {
+            position: absolute;
+            top: 5px; left: 5px;
+            font-size: 0.6rem;
+            color: var(--text-tertiary);
+        }
+
+        /* --- Gauges & Meters --- */
+        .score-container { text-align: center; padding: 1rem; }
+        .score-val { font-size: 3.5rem; font-weight: 200; color: var(--text-primary); line-height: 1; }
+        .score-label { font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem; text-transform: uppercase; }
+        
+        .bar-container {
+            height: 4px; background: var(--border-subtle);
+            border-radius: 2px; width: 100%; margin-top: 10px; overflow: hidden;
+        }
+        .bar-fill { height: 100%; width: 0%; transition: width 1s var(--ease-premium); }
+
+        /* --- Console --- */
+        .console-output {
+            height: 150px; overflow-y: auto;
+            font-family: var(--font-mono); font-size: 0.75rem;
+            color: var(--text-secondary); padding: 0.5rem;
+        }
+        .log-entry { margin-bottom: 4px; border-left: 2px solid transparent; padding-left: 8px; }
+        .log-entry.warn { border-left-color: var(--accent-warning); color: #fbbf24; }
+        .log-entry.danger { border-left-color: var(--accent-danger); color: #f87171; }
+        .log-entry.system { border-left-color: var(--accent-primary); color: var(--accent-primary); }
+
+        /* --- Recommendation Engine Styles --- */
+        .rec-card {
+            background: rgba(255,255,255,0.02);
+            border-left: 3px solid var(--accent-primary);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0 6px 6px 0;
+        }
+        .rec-card.critical { border-left-color: var(--accent-danger); }
+        .rec-card.medium { border-left-color: var(--accent-warning); }
+        
+        .rec-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 8px; }
+        .rec-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+        .rec-action { 
+            margin-top: 0.75rem; 
+            font-size: 0.75rem; 
+            font-family: var(--font-mono);
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: var(--text-primary);
+            display: inline-block;
+        }
+
+        /* --- Modal --- */
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            z-index: 1000; display: none; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-backdrop.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: #131315; width: 90%; max-width: 800px; max-height: 90vh;
+            border: 1px solid var(--border-subtle); border-radius: 12px;
+            display: flex; flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; }
+        .modal-body { padding: 2rem; overflow-y: auto; }
+        
+        .accordion-item { border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 1rem; overflow: hidden; }
+        .accordion-header {
+            padding: 1rem; background: rgba(255,255,255,0.02); cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 600; font-size: 0.9rem;
+        }
+        .accordion-header:hover { background: rgba(255,255,255,0.05); }
+        .accordion-content { padding: 1.5rem; display: none; background: #0a0a0c; border-top: 1px solid var(--border-subtle); }
+        .accordion-content.open { display: block; }
+
+        .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+        .impact-box { padding: 1rem; border-radius: 6px; background: rgba(255,255,255,0.02); }
+        .impact-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div class="warning-banner">
+        ⚠️ Panopticon running. Analyzing digital footprint...
+    </div>
+
+    <div class="layout">
+        <header class="header-bar">
+            <div class="header-title">
+                <h1>Panopticon</h1>
+                <div class="header-subtitle">Browser Fingerprinting & Network Analysis Suite</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-ghost btn-camo" id="camouflageBtn">👁️ Camouflage</button>
+                <button class="btn-ghost" id="copyReportBtn">Copy Report JSON</button>
+                <button class="btn-ghost" id="infoTrigger" style="color: var(--accent-primary); border-color: var(--accent-primary);">How This Works</button>
+            </div>
+        </header>
+
+        <div class="grid">
+           
+            <div class="panel col-4">
+                <div class="panel-header">
+                    <span class="panel-label">🔒 Public Identity</span>
+                    <div class="badge badge-red">High Risk</div>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Public IP</span>
+                    <span class="data-val" id="publicIP">Scanning...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">ISP / Org</span>
+                    <span class="data-val" id="ispInfo">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Location</span>
+                    <span class="data-val" id="geoLoc">--</span>
+                </div>
+                 <div class="data-row">
+                    <span class="data-key">VPN Check</span>
+                    <span class="data-val" id="vpnStatus">Checking...</span>
+                </div>
+            </div>
+
+            <div class="panel col-4">
+                <div class="panel-header">
+                    <span class="panel-label">📡 Network Diagnostics</span>
+                    <div id="netStatus" class="badge badge-green">Online</div>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">WebRTC Local IP</span>
+                    <span class="data-val" id="localIP">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Latency (RTT)</span>
+                    <span class="data-val" id="pingVal">-- ms</span>
+                </div>
+                 <div class="data-row">
+                    <span class="data-key">Connection Type</span>
+                    <span class="data-val" id="connType">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Downlink Est.</span>
+                    <span class="data-val" id="downlink">-- Mbps</span>
+                </div>
+            </div>
+
+            <div class="panel col-4 danger-glow">
+                <div class="panel-header">
+                    <span class="panel-label">🕵️ Uniqueness Score</span>
+                </div>
+                <div class="score-container">
+                    <div class="score-val" id="entropyScore">--</div>
+                    <div class="score-label">Entropy Points</div>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="entropyBar" style="background: var(--accent-secondary);"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem;">
+                        You are likely unique among <span id="uniqueRatio" style="color: var(--text-primary); font-weight: bold;">...</span> users.
+                    </p>
+                </div>
+            </div>
+
+            <div class="panel col-6">
+                <div class="panel-header">
+                    <span class="panel-label">🖥️ Hardware Profile</span>
+                    <div class="badge badge-yellow">Moderate Risk</div>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">OS / Platform</span>
+                    <span class="data-val" id="osVal">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">CPU Cores</span>
+                    <span class="data-val" id="cpuVal">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">RAM (Est)</span>
+                    <span class="data-val" id="ramVal">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Screen Res</span>
+                    <span class="data-val" id="resVal">--</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Battery Status</span>
+                    <span class="data-val" id="batteryVal">Protected</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">GPU Renderer</span>
+                    <span class="data-val" id="gpuVal" style="font-size: 0.7rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</span>
+                </div>
+            </div>
+
+            <div class="panel col-6">
+                <div class="panel-header">
+                    <span class="panel-label">🎨 Canvas & Audio Fingerprint</span>
+                    <div class="badge badge-red">High Risk</div>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Canvas Hash</span>
+                    <span class="data-val mono-highlight" id="canvasHash">Generating...</span>
+                </div>
+                <div class="canvas-container">
+                    <span class="canvas-label">Hidden Canvas Render</span>
+                    <canvas id="fingerprintCanvas" height="100"></canvas>
+                </div>
+                <div class="data-row" style="margin-top: 1rem;">
+                    <span class="data-key">Audio Context Hash</span>
+                    <span class="data-val mono-highlight" id="audioHash">Generating...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Installed Fonts (Subset)</span>
+                    <span class="data-val" id="fontCount">Scanning...</span>
+                </div>
+            </div>
+
+            <div class="panel col-12" id="securityPanel" style="border-color: var(--accent-primary); display:none;">
+                <div class="panel-header">
+                    <span class="panel-label">🛡️ Deep Security Analysis & Countermeasures</span>
+                    <div class="badge badge-green">Generated</div>
+                </div>
+                <div id="securityRecommendations">
+                    </div>
+            </div>
+
+            <div class="panel col-8">
+                <div class="panel-header">
+                    <span class="panel-label">📉 Latency Monitor</span>
+                </div>
+                <div style="height: 200px;">
+                    <canvas id="pingChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel col-4">
+                <div class="panel-header">
+                    <span class="panel-label">🖱️ Behavioral Tracking</span>
+                    <div class="badge badge-yellow">Live</div>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Mouse Position</span>
+                    <span class="data-val" id="mousePos">0, 0</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-key">Keystrokes</span>
+                    <span class="data-val" id="keyCount">0</span>
+                </div>
+                 <div class="data-row">
+                    <span class="data-key">Time on Page</span>
+                    <span class="data-val" id="timeOnPage">0s</span>
+                </div>
+                <div class="canvas-container" style="background: #1a1a1a;">
+                    <span class="canvas-label">Movement Heatmap</span>
+                    <canvas id="mouseMap" width="300" height="100"></canvas>
+                </div>
+            </div>
+
+            <div class="panel col-12">
+                <div class="panel-header">
+                    <span class="panel-label">System Log</span>
+                </div>
+                <div class="console-output" id="consoleLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="infoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Data Collection Mechanisms</h3>
+                <button class="btn-ghost" id="closeModal">Close</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">
+                    This dashboard demonstrates how modern websites can identify and track users without using cookies, purely through browser APIs and hardware differences.
+                </p>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span>Canvas Fingerprinting</span>
+                        <div class="badge badge-red">Critical Risk</div>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="impact-grid">
+                            <div class="impact-box">
+                                <div class="impact-title">Technique</div>
+                                <p style="font-size: 0.85rem;">The browser is asked to draw hidden text with gradients and emojis. Due to differences in graphics drivers, OS, and anti-aliasing, every device renders the pixels slightly differently.</p>
+                            </div>
+                            <div class="impact-box">
+                                <div class="impact-title">Privacy Impact</div>
+                                <p style="font-size: 0.85rem;">This creates a unique "Hash" that persists even if you clear cookies or use Incognito mode. It is highly effective for cross-site tracking.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span>WebRTC IP Leak</span>
+                        <div class="badge badge-red">Critical Risk</div>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="impact-grid">
+                            <div class="impact-box">
+                                <div class="impact-title">Technique</div>
+                                <p style="font-size: 0.85rem;">WebRTC (used for video chats) opens a direct channel to peers. To do this, it must determine your local LAN IP addresses (IPv4/IPv6) and sometimes your real IP behind a VPN.</p>
+                            </div>
+                            <div class="impact-box">
+                                <div class="impact-title">Privacy Impact</div>
+                                <p style="font-size: 0.85rem;">Reveals your internal network setup and can sometimes bypass VPNs to reveal your true location.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header">
+                        <span>Hardware & Audio Context</span>
+                        <div class="badge badge-yellow">Medium Risk</div>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="impact-grid">
+                            <div class="impact-box">
+                                <div class="impact-title">Technique</div>
+                                <p style="font-size: 0.85rem;">Scripts analyze your CPU core count, RAM, battery charging behavior, and how your audio hardware processes sound waves (AudioContext).</p>
+                            </div>
+                            <div class="impact-box">
+                                <div class="impact-title">Privacy Impact</div>
+                                <p style="font-size: 0.85rem;">Used to build a "composite fingerprint". While one metric isn't unique, the combination of 10+ metrics creates a highly specific profile.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * PANOPTICON ENGINE
+         * Pure Client-Side Privacy Analysis
+         */
+        const App = {
+            state: {
+                entropy: 0,
+                logHistory: [],
+                fingerprintData: {},
+                mousePoints: [],
+                startTime: Date.now(),
+                leaks: {
+                    webRTC: false,
+                    battery: false,
+                    highEntropy: false
+                }
+            },
+
+            dom: {},
+
+            init() {
+                this.cacheDOM();
+                this.initUI();
+                this.initChart();
+                this.setupListeners();
+                
+                // Execute Modules
+                this.log("Initializing diagnostics engine...", "system");
+                this.modules.identity.run();
+                this.modules.network.run();
+                this.modules.hardware.run();
+                this.modules.canvas.run();
+                this.modules.audio.run();
+                this.modules.behavior.run();
+
+                // Trigger Analysis Report after 4 seconds
+                setTimeout(() => this.generateDeepInsights(), 4000);
+            },
+
+            cacheDOM() {
+                const ids = [
+                    'publicIP', 'ispInfo', 'geoLoc', 'vpnStatus', 'localIP', 
+                    'pingVal', 'connType', 'downlink', 'osVal', 'cpuVal', 
+                    'ramVal', 'resVal', 'batteryVal', 'gpuVal', 'canvasHash', 
+                    'fingerprintCanvas', 'audioHash', 'fontCount', 'mousePos', 
+                    'keyCount', 'timeOnPage', 'mouseMap', 'consoleLog', 
+                    'entropyScore', 'entropyBar', 'uniqueRatio', 'infoModal', 
+                    'closeModal', 'infoTrigger', 'copyReportBtn', 'netStatus',
+                    'securityPanel', 'securityRecommendations', 'camouflageBtn'
+                ];
+                ids.forEach(id => this.dom[id] = document.getElementById(id));
+            },
+
+            setupListeners() {
+                // CAMOUFLAGE TOGGLE LOGIC
+                this.dom.camouflageBtn.onclick = () => {
+                    document.body.classList.toggle('camouflage-active');
+                    const isActive = document.body.classList.contains('camouflage-active');
+                    this.dom.camouflageBtn.textContent = isActive ? "👁️ Reveal" : "👁️ Camouflage";
+                    
+                    if(isActive) {
+                        this.log("Camouflage Mode Activated: Low Contrast Protocol", "warn");
+                    } else {
+                        this.log("Camouflage Mode Deactivated", "system");
+                    }
+                };
+
+                // Modal Logic
+                this.dom.infoTrigger.onclick = () => {
+                    this.dom.infoModal.classList.add('active');
+                    document.querySelectorAll('.accordion-header').forEach(header => {
+                        header.onclick = () => {
+                            const content = header.nextElementSibling;
+                            content.classList.toggle('open');
+                        }
+                    });
+                };
+                this.dom.closeModal.onclick = () => this.dom.infoModal.classList.remove('active');
+                
+                // Copy Report
+                this.dom.copyReportBtn.onclick = () => {
+                    const report = JSON.stringify(this.state.fingerprintData, null, 2);
+                    navigator.clipboard.writeText(report).then(() => {
+                        this.dom.copyReportBtn.textContent = "Copied!";
+                        setTimeout(() => this.dom.copyReportBtn.textContent = "Copy Report JSON", 2000);
+                    });
+                };
+
+                // Online/Offline
+                window.addEventListener('offline', () => {
+                    this.dom.netStatus.className = "badge badge-red";
+                    this.dom.netStatus.textContent = "Offline";
+                    this.log("Network connection lost", "danger");
+                });
+            },
+
+            modules: {
+                // 1. Identity (Public IP APIs)
+                identity: {
+                    run: async () => {
+                        App.log("Querying public identity endpoints...", "system");
+                        try {
+                            const response = await Promise.race([
+                                fetch('https://ipapi.co/json/'),
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                            ]);
+                           
+                            if (!response.ok) throw new Error('API Blocked');
+                           
+                            const data = await response.json();
+                            App.dom.publicIP.textContent = data.ip;
+                            App.dom.ispInfo.textContent = data.org || data.asn;
+                            App.dom.geoLoc.textContent = `${data.city}, ${data.country_code}`;
+                           
+                            // Simple Heuristics for VPN
+                            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                            const isMismatch = !timezone.includes(data.timezone); 
+                            App.dom.vpnStatus.textContent = isMismatch ? "Likely VPN/Proxy" : "Direct Connection";
+                            if(isMismatch) {
+                                App.dom.vpnStatus.className = "data-val risk-highlight";
+                                App.log("Timezone/IP location mismatch detected.", "warn");
+                            }
+
+                            App.updateEntropy(50);
+                            App.state.fingerprintData.identity = data;
+
+                        } catch (e) {
+                            App.dom.publicIP.textContent = "Blocked/Hidden";
+                            App.dom.ispInfo.textContent = "Unknown";
+                            App.log("Public IP API blocked by privacy tools.", "system");
+                        }
+                    }
+                },
+
+                // 2. Network (WebRTC, Connection, Ping)
+                network: {
+                    run: () => {
+                        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                        if (conn) {
+                            App.dom.connType.textContent = conn.effectiveType ? conn.effectiveType.toUpperCase() : 'Unknown';
+                            App.dom.downlink.textContent = conn.downlink ? `~${conn.downlink} Mbps` : '--';
+                        }
+
+                        // WebRTC Leak
+                        App.log("Attempting WebRTC Local IP leak...", "system");
+                        const pc = new RTCPeerConnection({iceServers: []});
+                        pc.createDataChannel('');
+                        pc.onicecandidate = (e) => {
+                            if (!e.candidate) return;
+                            const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
+                            const match = ipRegex.exec(e.candidate.candidate);
+                            if (match) {
+                                App.dom.localIP.textContent = match[1];
+                                App.dom.localIP.classList.add('risk-highlight');
+                                App.log(`WebRTC Leak: Found Local IP ${match[1]}`, "danger");
+                                App.state.leaks.webRTC = true;
+                                App.updateEntropy(20);
+                                App.state.fingerprintData.localIP = match[1];
+                                pc.close();
+                            }
+                        };
+                        pc.createOffer().then(d => pc.setLocalDescription(d)).catch(() => {});
+
+                        // Ping Heartbeat
+                        setInterval(() => {
+                            const start = performance.now();
+                            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
+                                .then(() => {
+                                    const rtt = Math.round(performance.now() - start);
+                                    App.dom.pingVal.textContent = `${rtt} ms`;
+                                    App.updateChart(rtt);
+                                }).catch(() => {});
+                        }, 2000);
+                    }
+                },
+
+                // 3. Hardware (Navigator props)
+                hardware: {
+                    run: async () => {
+                        const os = navigator.platform;
+                        App.dom.osVal.textContent = os;
+                        App.dom.cpuVal.textContent = navigator.hardwareConcurrency || "Unknown";
+                        App.dom.ramVal.textContent = navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : "Unknown";
+                       
+                        const width = window.screen.width;
+                        const height = window.screen.height;
+                        App.dom.resVal.textContent = `${width}x${height} (Depth: ${window.screen.colorDepth})`;
+
+                        // GPU Info
+                        const canvas = document.createElement('canvas');
+                        const gl = canvas.getContext('webgl');
+                        if (gl) {
+                            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                            if (debugInfo) {
+                                const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                                App.dom.gpuVal.textContent = renderer;
+                                App.state.fingerprintData.gpu = renderer;
+                                App.updateEntropy(15);
+                            }
+                        }
+
+                        // Battery API
+                        if ('getBattery' in navigator) {
+                            try {
+                                const battery = await navigator.getBattery();
+                                const status = `${Math.round(battery.level * 100)}% ${battery.charging ? '⚡' : ''}`;
+                                App.dom.batteryVal.textContent = status;
+                                App.dom.batteryVal.classList.add('risk-highlight');
+                                App.log("Battery Status API accessed (Older Browser?)", "warn");
+                                App.state.leaks.battery = true;
+                                App.updateEntropy(5);
+                            } catch(e) {}
+                        }
+
+                        App.state.fingerprintData.hardware = { os, cores: navigator.hardwareConcurrency, res: `${width}x${height}` };
+                    }
+                },
+
+                // 4. Canvas Fingerprinting
+                canvas: {
+                    run: () => {
+                        App.log("Generating Canvas Fingerprint...", "system");
+                        const canvas = App.dom.fingerprintCanvas;
+                        const ctx = canvas.getContext('2d');
+                       
+                        // Draw complex scene to trigger unique GPU rendering
+                        ctx.textBaseline = "top";
+                        ctx.font = "14px 'Arial'";
+                        ctx.textBaseline = "alphabetic";
+                        ctx.fillStyle = "#f60";
+                        ctx.fillRect(125, 1, 62, 20);
+                        ctx.fillStyle = "#069";
+                        ctx.fillText("Privacy", 2, 15);
+                        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+                        ctx.fillText("Check", 4, 45);
+                       
+                        const dataURL = canvas.toDataURL();
+                        const hash = App.utils.cyrb53(dataURL);
+                       
+                        App.dom.canvasHash.textContent = hash;
+                        App.state.fingerprintData.canvasHash = hash;
+                        App.updateEntropy(30);
+                        App.log(`Canvas Hash Generated: ${hash}`, "danger");
+                    }
+                },
+
+                // 5. Audio Context
+                audio: {
+                    run: () => {
+                        try {
+                            const AudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+                            if (!AudioContext) return;
+
+                            const context = new AudioContext(1, 44100, 44100);
+                            const oscillator = context.createOscillator();
+                            oscillator.type = 'triangle';
+                            oscillator.frequency.setValueAtTime(10000, context.currentTime);
+                           
+                            const compressor = context.createDynamicsCompressor();
+                           
+                            oscillator.connect(compressor);
+                            compressor.connect(context.destination);
+                           
+                            oscillator.start(0);
+                            context.startRendering().then((buffer) => {
+                                const hash = App.utils.cyrb53(buffer.getChannelData(0).slice(0, 5000).toString());
+                                App.dom.audioHash.textContent = hash;
+                                App.state.fingerprintData.audioHash = hash;
+                                App.updateEntropy(15);
+                            });
+                        } catch(e) {
+                            App.dom.audioHash.textContent = "Not Supported";
+                        }
+                    }
+                },
+
+                // 6. Behavioral
+                behavior: {
+                    run: () => {
+                        const mouseCanvas = App.dom.mouseMap;
+                        const mCtx = mouseCanvas.getContext('2d');
+                       
+                        setInterval(() => {
+                            const seconds = Math.floor((Date.now() - App.state.startTime) / 1000);
+                            App.dom.timeOnPage.textContent = `${seconds}s`;
+                        }, 1000);
+
+                        document.addEventListener('mousemove', (e) => {
+                            App.dom.mousePos.textContent = `${e.clientX}, ${e.clientY}`;
+                            const rect = mouseCanvas.getBoundingClientRect();
+                            const x = (e.clientX / window.innerWidth) * mouseCanvas.width;
+                            const y = (e.clientY / window.innerHeight) * mouseCanvas.height;
+                           
+                            mCtx.fillStyle = "rgba(99, 102, 241, 0.5)";
+                            mCtx.beginPath();
+                            mCtx.arc(x, y, 2, 0, Math.PI * 2);
+                            mCtx.fill();
+                        });
+
+                        document.addEventListener('keydown', () => {
+                            App.state.keyCount = (App.state.keyCount || 0) + 1;
+                            App.dom.keyCount.textContent = App.state.keyCount;
+                        });
+                    }
+                }
+            },
+
+            // --- INTELLIGENCE ENGINE ---
+            generateDeepInsights() {
+                const container = this.dom.securityRecommendations;
+                const panel = document.getElementById('securityPanel');
+                container.innerHTML = '';
+                let hasRecs = false;
+
+                const createRec = (level, title, desc, action) => {
+                    hasRecs = true;
+                    return `
+                    <div class="rec-card ${level}">
+                        <div class="rec-title">${level === 'critical' ? '🔴' : '⚠️'} ${title}</div>
+                        <div class="rec-desc">${desc}</div>
+                        <div class="rec-action">${action}</div>
+                    </div>`;
+                };
+
+                // 1. WebRTC Leak Check
+                if (this.state.leaks.webRTC) {
+                    container.innerHTML += createRec('critical', 'WebRTC IP Leak Detected', 
+                        'Your real Local IP is visible through WebRTC, bypassing VPNs.',
+                        'Action: Disable WebRTC in browser (e.g., Firefox `media.peerconnection.enabled = false`) or use uBlock Origin.'
+                    );
+                }
+
+                // 2. High Entropy Check (Fingerprinting)
+                if (this.state.entropy > 100) {
+                    container.innerHTML += createRec('critical', 'Extreme Fingerprinting Risk', 
+                        'Your Canvas/Audio hashes and Font lists create a unique ID. Incognito mode DOES NOT fix this.',
+                        'Action: Use Firefox with `privacy.resistFingerprinting` enabled, or the Tor Browser.'
+                    );
+                }
+
+                // 3. Battery API Check
+                if (this.state.leaks.battery) {
+                    container.innerHTML += createRec('medium', 'Obsolete Privacy API', 
+                        'Your browser supports the Battery Status API, which was deprecated for privacy risks.',
+                        'Action: Update your browser to the latest version immediately.'
+                    );
+                }
+
+                // 4. ISP Visibility
+                const isp = this.dom.ispInfo.textContent;
+                if (isp !== "Unknown" && isp !== "--") {
+                    container.innerHTML += createRec('medium', 'DNS/ISP Visibility', 
+                        `Your ISP (${isp}) can likely see your DNS requests even if you use HTTPS.`,
+                        'Action: Enable "Secure DNS" (DoH) in your browser settings (Settings > Privacy > Use Secure DNS).'
+                    );
+                }
+
+                if (hasRecs) {
+                    panel.style.display = 'flex';
+                    this.log("Security Intelligence Report Generated", "system");
+                }
+            },
+
+            utils: {
+                cyrb53: function(str, seed = 0) {
+                    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+                    for (let i = 0, ch; i < str.length; i++) {
+                        ch = str.charCodeAt(i);
+                        h1 = Math.imul(h1 ^ ch, 2654435761);
+                        h2 = Math.imul(h2 ^ ch, 1597334677);
+                    }
+                    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+                    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+                    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+                }
+            },
+
+            updateEntropy(points) {
+                this.state.entropy += points;
+                const maxEntropy = 180; 
+                const percent = Math.min((this.state.entropy / maxEntropy) * 100, 100);
+               
+                this.dom.entropyScore.textContent = this.state.entropy;
+                this.dom.entropyBar.style.width = `${percent}%`;
+               
+                const bar = this.dom.entropyBar;
+                if (percent < 30) bar.style.background = "var(--accent-success)";
+                else if (percent < 70) bar.style.background = "var(--accent-warning)";
+                else bar.style.background = "var(--accent-danger)";
+
+                const users = Math.floor(Math.pow(2, this.state.entropy / 5));
+                this.dom.uniqueRatio.textContent = users.toLocaleString();
+            },
+
+            initUI() {
+                this.dom.consoleLog.innerHTML = '';
+            },
+
+            log(msg, type = "normal") {
+                const div = document.createElement('div');
+                div.className = `log-entry ${type}`;
+                const time = new Date().toLocaleTimeString('en-US', {hour12: false});
+                div.innerHTML = `<span style="opacity:0.5">[${time}]</span> ${msg}`;
+                this.dom.consoleLog.prepend(div);
+            },
+
+            chart: null,
+            initChart() {
+                const ctx = document.getElementById('pingChart').getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.2)');
+                gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array(20).fill(''),
+                        datasets: [{
+                            data: Array(20).fill(0),
+                            borderColor: '#6366f1',
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        },
+                        animation: { duration: 0 }
+                    }
+                });
+            },
+
+            updateChart(val) {
+                const data = this.chart.data.datasets[0].data;
+                data.push(val);
+                data.shift();
+                this.chart.update();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
