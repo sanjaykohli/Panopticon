@@ -6,7 +6,7 @@
     <meta name="description" content="Advanced Network & Privacy Analysis Tool">
     <title>Panopticon | Advanced Privacy Diagnostics</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 
     <style>
         :root {
@@ -47,22 +47,16 @@
         }
 
         /* --- CAMOUFLAGE MODE ENGINEERING --- */
-        /* Activated via JS button */
         body.camouflage-active {
-            /* Force the low contrast background */
             background-color: #080808 !important;
             --bg-app: #080808;
             --bg-panel: #080808;
-            
-            /* The "Invisible" Color Palette (#2a2a2a on #080808) */
             --text-camouflaged: #2a2a2a;
             --border-camouflaged: #1a1a1a;
         }
 
-        /* 1. Hide everything by default in this mode */
         body.camouflage-active .panel, 
-        body.camouflage-active header,
-        body.camouflage-active .warning-banner {
+        body.camouflage-active header {
             background-color: #080808 !important;
             border-color: var(--border-camouflaged) !important;
             box-shadow: none !important;
@@ -83,62 +77,38 @@
             color: #333 !important;
         }
 
-        /* Dim the visualizers to be barely visible */
         body.camouflage-active canvas {
             opacity: 0.1;
             filter: grayscale(100%);
             transition: opacity 0.3s ease, filter 0.3s ease;
         }
 
-        /* 2. THE REVEAL: "Only where it hovers that part is shown" */
-        /* When hovering specific containers, we restore the original variables implicitly by unsetting important or forcing white */
-        
         body.camouflage-active .panel:hover,
         body.camouflage-active header:hover {
-            background-color: #0f0f12 !important; /* Restore dark panel bg */
+            background-color: #0f0f12 !important;
             border-color: #444 !important;
             z-index: 10;
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
             transform: scale(1.005);
         }
 
-        /* Restore text inside hovered element */
         body.camouflage-active .panel:hover *,
         body.camouflage-active header:hover * {
-            color: #f8fafc !important; /* Restore bright white text */
+            color: #f8fafc !important;
         }
         
-        /* Restore secondary text specific colors */
         body.camouflage-active .panel:hover .data-key,
         body.camouflage-active .panel:hover .header-subtitle {
              color: #94a3b8 !important;
         }
 
-        /* Restore Badges on hover */
         body.camouflage-active .panel:hover .badge-red { background: rgba(239, 68, 68, 0.15) !important; color: var(--accent-danger) !important; }
         body.camouflage-active .panel:hover .badge-yellow { background: rgba(245, 158, 11, 0.15) !important; color: var(--accent-warning) !important; }
         body.camouflage-active .panel:hover .badge-green { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent-success) !important; }
 
-        /* Restore Canvas on hover */
         body.camouflage-active .panel:hover canvas {
             opacity: 1;
             filter: grayscale(0%);
-        }
-
-        /* ------------------------------------- */
-
-        /* --- Warning Banner --- */
-        .warning-banner {
-            background: rgba(239, 68, 68, 0.15);
-            border-bottom: 1px solid var(--accent-danger);
-            color: #fca5a5;
-            text-align: center;
-            padding: 0.5rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            z-index: 100;
         }
 
         /* --- Layout --- */
@@ -162,9 +132,8 @@
         }
 
         .header-title h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-        .header-subtitle { color: var(--text-tertiary); font-size: 0.9rem; }
-
-        .header-actions { display: flex; gap: 1rem; }
+        
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
 
         .btn-ghost {
             background: transparent;
@@ -175,10 +144,23 @@
             cursor: pointer;
             font-size: 0.85rem;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
         }
         .btn-ghost:hover { background: var(--bg-panel-hover); color: var(--text-primary); border-color: var(--text-tertiary); }
         
-        /* Camouflage Button Special Style */
+        .arrow-icon {
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+            transition: transform 0.2s;
+        }
+
         .btn-camo {
             border-color: #444;
             color: #888;
@@ -374,28 +356,25 @@
 </head>
 <body>
 
-    <div class="warning-banner">
-        ⚠️ Panopticon running. Analyzing digital footprint...
-    </div>
-
     <div class="layout">
         <header class="header-bar">
             <div class="header-title">
                 <h1>Panopticon</h1>
-                <div class="header-subtitle">Browser Fingerprinting & Network Analysis Suite</div>
             </div>
             <div class="header-actions">
-                <button class="btn-ghost btn-camo" id="camouflageBtn">👁️ Camouflage</button>
+                <button class="btn-ghost btn-camo" id="camouflageBtn">Camouflage Mode</button>
                 <button class="btn-ghost" id="copyReportBtn">Copy Report JSON</button>
-                <button class="btn-ghost" id="infoTrigger" style="color: var(--accent-primary); border-color: var(--accent-primary);">How This Works</button>
+                <button class="btn-ghost" id="infoTrigger" style="color: var(--accent-primary); border-color: var(--accent-primary);">
+                    System Overview <span class="arrow-icon"></span>
+                </button>
             </div>
         </header>
 
         <div class="grid">
-           
+            
             <div class="panel col-4">
                 <div class="panel-header">
-                    <span class="panel-label">🔒 Public Identity</span>
+                    <span class="panel-label">Public Identity</span>
                     <div class="badge badge-red">High Risk</div>
                 </div>
                 <div class="data-row">
@@ -418,7 +397,7 @@
 
             <div class="panel col-4">
                 <div class="panel-header">
-                    <span class="panel-label">📡 Network Diagnostics</span>
+                    <span class="panel-label">Network Diagnostics</span>
                     <div id="netStatus" class="badge badge-green">Online</div>
                 </div>
                 <div class="data-row">
@@ -441,7 +420,7 @@
 
             <div class="panel col-4 danger-glow">
                 <div class="panel-header">
-                    <span class="panel-label">🕵️ Uniqueness Score</span>
+                    <span class="panel-label">Uniqueness Score</span>
                 </div>
                 <div class="score-container">
                     <div class="score-val" id="entropyScore">--</div>
@@ -457,7 +436,7 @@
 
             <div class="panel col-6">
                 <div class="panel-header">
-                    <span class="panel-label">🖥️ Hardware Profile</span>
+                    <span class="panel-label">Hardware Profile</span>
                     <div class="badge badge-yellow">Moderate Risk</div>
                 </div>
                 <div class="data-row">
@@ -488,7 +467,7 @@
 
             <div class="panel col-6">
                 <div class="panel-header">
-                    <span class="panel-label">🎨 Canvas & Audio Fingerprint</span>
+                    <span class="panel-label">Canvas & Audio Fingerprint</span>
                     <div class="badge badge-red">High Risk</div>
                 </div>
                 <div class="data-row">
@@ -505,13 +484,13 @@
                 </div>
                 <div class="data-row">
                     <span class="data-key">Installed Fonts (Subset)</span>
-                    <span class="data-val" id="fontCount">Scanning...</span>
+                    <span class="data-val" id="fontCount">Not Implemented</span>
                 </div>
             </div>
 
             <div class="panel col-12" id="securityPanel" style="border-color: var(--accent-primary); display:none;">
                 <div class="panel-header">
-                    <span class="panel-label">🛡️ Deep Security Analysis & Countermeasures</span>
+                    <span class="panel-label">Deep Security Analysis & Countermeasures</span>
                     <div class="badge badge-green">Generated</div>
                 </div>
                 <div id="securityRecommendations">
@@ -520,7 +499,7 @@
 
             <div class="panel col-8">
                 <div class="panel-header">
-                    <span class="panel-label">📉 Latency Monitor</span>
+                    <span class="panel-label">Latency Monitor</span>
                 </div>
                 <div style="height: 200px;">
                     <canvas id="pingChart"></canvas>
@@ -529,7 +508,7 @@
 
             <div class="panel col-4">
                 <div class="panel-header">
-                    <span class="panel-label">🖱️ Behavioral Tracking</span>
+                    <span class="panel-label">Behavioral Tracking</span>
                     <div class="badge badge-yellow">Live</div>
                 </div>
                 <div class="data-row">
@@ -562,13 +541,23 @@
     <div class="modal-backdrop" id="infoModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Data Collection Mechanisms</h3>
+                <h3>Technical Overview</h3>
                 <button class="btn-ghost" id="closeModal">Close</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">
-                    This dashboard demonstrates how modern websites can identify and track users without using cookies, purely through browser APIs and hardware differences.
+                <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.6;">
+                    Panopticon demonstrates client-side data collection techniques. It illustrates how modern web applications can identify and track users without utilizing cookies, relying instead on browser APIs, hardware differences, and network behaviors.
                 </p>
+
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid var(--accent-primary);">
+                    <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">For Developers</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        Understand the code behind these diagnostics. View the source to see how Canvas Fingerprinting, WebRTC IP leakage, and Audio Context analysis are implemented in pure JavaScript.
+                    </p>
+                    <a href="https://GitHub.com/sanjaykohli/Panopticon" target="_blank" class="btn-ghost" style="display: inline-flex; background: var(--bg-panel); color: var(--text-primary); border-color: var(--text-tertiary);">
+                        View Source on GitHub
+                    </a>
+                </div>
 
                 <div class="accordion-item">
                     <div class="accordion-header">
@@ -579,11 +568,11 @@
                         <div class="impact-grid">
                             <div class="impact-box">
                                 <div class="impact-title">Technique</div>
-                                <p style="font-size: 0.85rem;">The browser is asked to draw hidden text with gradients and emojis. Due to differences in graphics drivers, OS, and anti-aliasing, every device renders the pixels slightly differently.</p>
+                                <p style="font-size: 0.85rem;">The browser renders hidden text and gradients. Subtle differences in GPU rendering, anti-aliasing, and OS font handling produce unique pixel data.</p>
                             </div>
                             <div class="impact-box">
                                 <div class="impact-title">Privacy Impact</div>
-                                <p style="font-size: 0.85rem;">This creates a unique "Hash" that persists even if you clear cookies or use Incognito mode. It is highly effective for cross-site tracking.</p>
+                                <p style="font-size: 0.85rem;">Creates a persistent identifier (hash) that remains consistent even after clearing cookies or utilizing private browsing modes.</p>
                             </div>
                         </div>
                     </div>
@@ -598,11 +587,11 @@
                         <div class="impact-grid">
                             <div class="impact-box">
                                 <div class="impact-title">Technique</div>
-                                <p style="font-size: 0.85rem;">WebRTC (used for video chats) opens a direct channel to peers. To do this, it must determine your local LAN IP addresses (IPv4/IPv6) and sometimes your real IP behind a VPN.</p>
+                                <p style="font-size: 0.85rem;">WebRTC establishes peer-to-peer connections. To facilitate this, it may expose local LAN IP addresses and, in some configurations, the true public IP behind a VPN.</p>
                             </div>
                             <div class="impact-box">
                                 <div class="impact-title">Privacy Impact</div>
-                                <p style="font-size: 0.85rem;">Reveals your internal network setup and can sometimes bypass VPNs to reveal your true location.</p>
+                                <p style="font-size: 0.85rem;">Reveals internal network architecture and potentially bypasses VPN protections to disclose physical location.</p>
                             </div>
                         </div>
                     </div>
@@ -617,11 +606,11 @@
                         <div class="impact-grid">
                             <div class="impact-box">
                                 <div class="impact-title">Technique</div>
-                                <p style="font-size: 0.85rem;">Scripts analyze your CPU core count, RAM, battery charging behavior, and how your audio hardware processes sound waves (AudioContext).</p>
+                                <p style="font-size: 0.85rem;">Scripts analyze CPU core count, RAM estimates, battery behavior, and audio signal processing characteristics.</p>
                             </div>
                             <div class="impact-box">
                                 <div class="impact-title">Privacy Impact</div>
-                                <p style="font-size: 0.85rem;">Used to build a "composite fingerprint". While one metric isn't unique, the combination of 10+ metrics creates a highly specific profile.</p>
+                                <p style="font-size: 0.85rem;">Contributes to a composite fingerprint. While individual metrics are not unique, the aggregate profile is highly specific.</p>
                             </div>
                         </div>
                     </div>
@@ -642,6 +631,7 @@
                 fingerprintData: {},
                 mousePoints: [],
                 startTime: Date.now(),
+                keyCount: 0, // Fix #2: Initialize keyCount
                 leaks: {
                     webRTC: false,
                     battery: false,
@@ -689,7 +679,7 @@
                 this.dom.camouflageBtn.onclick = () => {
                     document.body.classList.toggle('camouflage-active');
                     const isActive = document.body.classList.contains('camouflage-active');
-                    this.dom.camouflageBtn.textContent = isActive ? "👁️ Reveal" : "👁️ Camouflage";
+                    this.dom.camouflageBtn.textContent = isActive ? "Reveal UI" : "Camouflage Mode";
                     
                     if(isActive) {
                         this.log("Camouflage Mode Activated: Low Contrast Protocol", "warn");
@@ -701,15 +691,17 @@
                 // Modal Logic
                 this.dom.infoTrigger.onclick = () => {
                     this.dom.infoModal.classList.add('active');
-                    document.querySelectorAll('.accordion-header').forEach(header => {
-                        header.onclick = () => {
-                            const content = header.nextElementSibling;
-                            content.classList.toggle('open');
-                        }
-                    });
                 };
                 this.dom.closeModal.onclick = () => this.dom.infoModal.classList.remove('active');
                 
+                // Fix #5: Move accordion listeners here to avoid multiple bindings
+                document.querySelectorAll('.accordion-header').forEach(header => {
+                    header.onclick = () => {
+                        const content = header.nextElementSibling;
+                        content.classList.toggle('open');
+                    }
+                });
+
                 // Copy Report
                 this.dom.copyReportBtn.onclick = () => {
                     const report = JSON.stringify(this.state.fingerprintData, null, 2);
@@ -737,14 +729,14 @@
                                 fetch('https://ipapi.co/json/'),
                                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
                             ]);
-                           
+                            
                             if (!response.ok) throw new Error('API Blocked');
-                           
+                            
                             const data = await response.json();
                             App.dom.publicIP.textContent = data.ip;
                             App.dom.ispInfo.textContent = data.org || data.asn;
                             App.dom.geoLoc.textContent = `${data.city}, ${data.country_code}`;
-                           
+                            
                             // Simple Heuristics for VPN
                             const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                             const isMismatch = !timezone.includes(data.timezone); 
@@ -774,10 +766,16 @@
                             App.dom.downlink.textContent = conn.downlink ? `~${conn.downlink} Mbps` : '--';
                         }
 
-                        // WebRTC Leak
+                        // Fix #4: Fix WebRTC Memory Leak & connection handling
                         App.log("Attempting WebRTC Local IP leak...", "system");
                         const pc = new RTCPeerConnection({iceServers: []});
                         pc.createDataChannel('');
+                        
+                        // Safety timeout to close connection if no candidate found
+                        const leakTimeout = setTimeout(() => {
+                            if(pc.signalingState !== 'closed') pc.close();
+                        }, 5000);
+
                         pc.onicecandidate = (e) => {
                             if (!e.candidate) return;
                             const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
@@ -789,6 +787,9 @@
                                 App.state.leaks.webRTC = true;
                                 App.updateEntropy(20);
                                 App.state.fingerprintData.localIP = match[1];
+                                
+                                // Close immediately on success and clear timeout
+                                clearTimeout(leakTimeout);
                                 pc.close();
                             }
                         };
@@ -814,10 +815,13 @@
                         App.dom.osVal.textContent = os;
                         App.dom.cpuVal.textContent = navigator.hardwareConcurrency || "Unknown";
                         App.dom.ramVal.textContent = navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : "Unknown";
-                       
+                        
                         const width = window.screen.width;
                         const height = window.screen.height;
                         App.dom.resVal.textContent = `${width}x${height} (Depth: ${window.screen.colorDepth})`;
+                        
+                        // Fix #7: Feature Disabled/Not Implemented status
+                        App.dom.fontCount.textContent = "Feature Disabled";
 
                         // GPU Info
                         const canvas = document.createElement('canvas');
@@ -836,7 +840,7 @@
                         if ('getBattery' in navigator) {
                             try {
                                 const battery = await navigator.getBattery();
-                                const status = `${Math.round(battery.level * 100)}% ${battery.charging ? '⚡' : ''}`;
+                                const status = `${Math.round(battery.level * 100)}% ${battery.charging ? 'Charging' : ''}`;
                                 App.dom.batteryVal.textContent = status;
                                 App.dom.batteryVal.classList.add('risk-highlight');
                                 App.log("Battery Status API accessed (Older Browser?)", "warn");
@@ -855,7 +859,7 @@
                         App.log("Generating Canvas Fingerprint...", "system");
                         const canvas = App.dom.fingerprintCanvas;
                         const ctx = canvas.getContext('2d');
-                       
+                        
                         // Draw complex scene to trigger unique GPU rendering
                         ctx.textBaseline = "top";
                         ctx.font = "14px 'Arial'";
@@ -866,10 +870,10 @@
                         ctx.fillText("Privacy", 2, 15);
                         ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
                         ctx.fillText("Check", 4, 45);
-                       
+                        
                         const dataURL = canvas.toDataURL();
                         const hash = App.utils.cyrb53(dataURL);
-                       
+                        
                         App.dom.canvasHash.textContent = hash;
                         App.state.fingerprintData.canvasHash = hash;
                         App.updateEntropy(30);
@@ -888,12 +892,12 @@
                             const oscillator = context.createOscillator();
                             oscillator.type = 'triangle';
                             oscillator.frequency.setValueAtTime(10000, context.currentTime);
-                           
+                            
                             const compressor = context.createDynamicsCompressor();
-                           
+                            
                             oscillator.connect(compressor);
                             compressor.connect(context.destination);
-                           
+                            
                             oscillator.start(0);
                             context.startRendering().then((buffer) => {
                                 const hash = App.utils.cyrb53(buffer.getChannelData(0).slice(0, 5000).toString());
@@ -912,7 +916,7 @@
                     run: () => {
                         const mouseCanvas = App.dom.mouseMap;
                         const mCtx = mouseCanvas.getContext('2d');
-                       
+                        
                         setInterval(() => {
                             const seconds = Math.floor((Date.now() - App.state.startTime) / 1000);
                             App.dom.timeOnPage.textContent = `${seconds}s`;
@@ -920,10 +924,11 @@
 
                         document.addEventListener('mousemove', (e) => {
                             App.dom.mousePos.textContent = `${e.clientX}, ${e.clientY}`;
-                            const rect = mouseCanvas.getBoundingClientRect();
+                            
+                            // Fix #3: Removed unused variable 'rect'
                             const x = (e.clientX / window.innerWidth) * mouseCanvas.width;
                             const y = (e.clientY / window.innerHeight) * mouseCanvas.height;
-                           
+                            
                             mCtx.fillStyle = "rgba(99, 102, 241, 0.5)";
                             mCtx.beginPath();
                             mCtx.arc(x, y, 2, 0, Math.PI * 2);
@@ -949,7 +954,7 @@
                     hasRecs = true;
                     return `
                     <div class="rec-card ${level}">
-                        <div class="rec-title">${level === 'critical' ? '🔴' : '⚠️'} ${title}</div>
+                        <div class="rec-title">${level === 'critical' ? 'CRITICAL' : 'WARNING'} : ${title}</div>
                         <div class="rec-desc">${desc}</div>
                         <div class="rec-action">${action}</div>
                     </div>`;
@@ -1012,10 +1017,10 @@
                 this.state.entropy += points;
                 const maxEntropy = 180; 
                 const percent = Math.min((this.state.entropy / maxEntropy) * 100, 100);
-               
+                
                 this.dom.entropyScore.textContent = this.state.entropy;
                 this.dom.entropyBar.style.width = `${percent}%`;
-               
+                
                 const bar = this.dom.entropyBar;
                 if (percent < 30) bar.style.background = "var(--accent-success)";
                 else if (percent < 70) bar.style.background = "var(--accent-warning)";
@@ -1039,7 +1044,13 @@
 
             chart: null,
             initChart() {
-                const ctx = document.getElementById('pingChart').getContext('2d');
+                // Fix #6: Chart safety check
+                const chartElement = document.getElementById('pingChart');
+                if (!chartElement) return;
+
+                const ctx = chartElement.getContext('2d');
+                if (!ctx) return;
+
                 const gradient = ctx.createLinearGradient(0, 0, 0, 200);
                 gradient.addColorStop(0, 'rgba(99, 102, 241, 0.2)');
                 gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
@@ -1072,6 +1083,7 @@
             },
 
             updateChart(val) {
+                if (!this.chart) return;
                 const data = this.chart.data.datasets[0].data;
                 data.push(val);
                 data.shift();
