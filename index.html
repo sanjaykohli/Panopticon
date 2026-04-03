@@ -3,118 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Advanced Network & Privacy Analysis Tool">
+    <meta name="description" content="Advanced Network & Privacy Analysis Tool – Educational demo of browser fingerprinting">
     <title>Panopticon | Advanced Privacy Diagnostics</title>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* --- Color System --- */
             --bg-app: #050507;
-            --bg-panel: #0f0f12;
-            --bg-panel-hover: #18181b;
-            
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-active: rgba(255, 255, 255, 0.2);
-            
-            --accent-primary: #6366f1; /* Indigo */
-            --accent-secondary: #ec4899; /* Pink/Magenta for Fingerprint */
+            --bg-panel: #0c0c0f;
+            --bg-panel-hover: #141418;
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-active: rgba(255, 255, 255, 0.18);
+            --accent-primary: #6366f1;
+            --accent-secondary: #ec4899;
             --accent-success: #10b981;
             --accent-warning: #f59e0b;
             --accent-danger: #ef4444;
-
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-tertiary: #64748b;
-
-            --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-            --ease-premium: cubic-bezier(0.2, 0.0, 0.2, 1); 
+            --text-primary: #f0f2f8;
+            --text-secondary: #8892a4;
+            --text-tertiary: #555f72;
+            --font-mono: 'Space Mono', 'Courier New', monospace;
+            --font-display: 'Syne', sans-serif;
+            --ease-premium: cubic-bezier(0.2, 0.0, 0.2, 1);
+            --shimmer-color: rgba(255,255,255,0.04);
         }
 
-        /* --- Global Reset --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-display);
             background-color: var(--bg-app);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            transition: background-color 0.5s ease;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.08) 0%, transparent 60%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' fill='none'/%3E%3Ccircle cx='30' cy='30' r='0.5' fill='rgba(255,255,255,0.04)'/%3E%3C/svg%3E");
         }
 
-        /* --- CAMOUFLAGE MODE ENGINEERING --- */
+        /* ── CAMOUFLAGE MODE ─────────────────────────────────────────────── */
         body.camouflage-active {
             background-color: #080808 !important;
-            --bg-app: #080808;
-            --bg-panel: #080808;
-            --text-camouflaged: #2a2a2a;
-            --border-camouflaged: #1a1a1a;
+            background-image: none !important;
         }
-
-        body.camouflage-active .panel, 
+        body.camouflage-active .panel,
         body.camouflage-active header {
             background-color: #080808 !important;
-            border-color: var(--border-camouflaged) !important;
+            border-color: #141414 !important;
             box-shadow: none !important;
-            transition: all 0.3s ease;
         }
-
-        body.camouflage-active h1, 
-        body.camouflage-active span, 
-        body.camouflage-active div, 
+        body.camouflage-active h1,
+        body.camouflage-active span,
+        body.camouflage-active div,
         body.camouflage-active p,
         body.camouflage-active button {
-            color: var(--text-camouflaged) !important;
+            color: #1e1e1e !important;
             transition: color 0.2s ease;
         }
-
-        body.camouflage-active .badge {
-            background: #111 !important;
-            color: #333 !important;
-        }
-
-        body.camouflage-active canvas {
-            opacity: 0.1;
-            filter: grayscale(100%);
-            transition: opacity 0.3s ease, filter 0.3s ease;
-        }
+        body.camouflage-active .badge { background: #111 !important; color: #2a2a2a !important; }
+        body.camouflage-active canvas { opacity: 0.05; filter: grayscale(100%); }
+        body.camouflage-active .camo-hint { color: #444 !important; font-size: 0.65rem; text-align: center; display: block !important; }
 
         body.camouflage-active .panel:hover,
         body.camouflage-active header:hover {
             background-color: #0f0f12 !important;
-            border-color: #444 !important;
+            border-color: #3a3a3a !important;
             z-index: 10;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            transform: scale(1.005);
+            box-shadow: 0 0 40px rgba(0,0,0,0.9) !important;
+            transform: scale(1.003);
         }
-
         body.camouflage-active .panel:hover *,
-        body.camouflage-active header:hover * {
-            color: #f8fafc !important;
-        }
-        
-        body.camouflage-active .panel:hover .data-key,
-        body.camouflage-active .panel:hover .header-subtitle {
-             color: #94a3b8 !important;
-        }
+        body.camouflage-active header:hover * { color: var(--text-primary) !important; }
+        body.camouflage-active .panel:hover .data-key { color: var(--text-secondary) !important; }
+        body.camouflage-active .panel:hover .panel-label { color: var(--text-tertiary) !important; }
+        body.camouflage-active .panel:hover canvas { opacity: 1; filter: grayscale(0%); }
+        body.camouflage-active .panel:hover .badge-red { background: rgba(239,68,68,0.15) !important; color: var(--accent-danger) !important; }
+        body.camouflage-active .panel:hover .badge-yellow { background: rgba(245,158,11,0.15) !important; color: var(--accent-warning) !important; }
+        body.camouflage-active .panel:hover .badge-green { background: rgba(16,185,129,0.15) !important; color: var(--accent-success) !important; }
+        body.camouflage-active .panel:hover .badge-blue { background: rgba(99,102,241,0.15) !important; color: var(--accent-primary) !important; }
 
-        body.camouflage-active .panel:hover .badge-red { background: rgba(239, 68, 68, 0.15) !important; color: var(--accent-danger) !important; }
-        body.camouflage-active .panel:hover .badge-yellow { background: rgba(245, 158, 11, 0.15) !important; color: var(--accent-warning) !important; }
-        body.camouflage-active .panel:hover .badge-green { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent-success) !important; }
-
-        body.camouflage-active .panel:hover canvas {
-            opacity: 1;
-            filter: grayscale(0%);
-        }
-
-        /* --- Layout --- */
+        /* ── LAYOUT ──────────────────────────────────────────────────────── */
         .layout {
             width: 100%;
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
             padding: 2rem;
             display: flex;
@@ -122,61 +98,130 @@
             gap: 1.5rem;
         }
 
-        /* --- Header --- */
+        /* ── HEADER ──────────────────────────────────────────────────────── */
         .header-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid var(--border-subtle);
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .header-left { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+        .header-title h1 {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            background: linear-gradient(135deg, #f0f2f8 0%, #8892a4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        /* Right side: status row + button row stacked */
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.6rem;
+        }
+        .header-status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
-        .header-title h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-        
-        .header-actions { display: flex; gap: 1rem; align-items: center; }
+        @media (max-width: 768px) {
+            .layout { padding: 1rem; }
+            .header-bar { flex-direction: column; align-items: flex-start; }
+            .header-right { align-items: flex-start; width: 100%; }
+            .header-actions { justify-content: flex-start; }
+        }
 
         .btn-ghost {
             background: transparent;
             border: 1px solid var(--border-subtle);
             color: var(--text-secondary);
-            padding: 0.5rem 1rem;
+            padding: 0.45rem 0.9rem;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            font-family: var(--font-display);
+            font-weight: 600;
             transition: all 0.2s;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             text-decoration: none;
+            white-space: nowrap;
         }
-        .btn-ghost:hover { background: var(--bg-panel-hover); color: var(--text-primary); border-color: var(--text-tertiary); }
-        
-        .arrow-icon {
-            width: 10px;
-            height: 10px;
-            border-right: 2px solid currentColor;
-            border-bottom: 2px solid currentColor;
-            transform: rotate(45deg);
-            margin-bottom: 2px;
-            transition: transform 0.2s;
-        }
+        .btn-ghost:hover { background: var(--bg-panel-hover); color: var(--text-primary); border-color: var(--border-active); }
+        .btn-ghost:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 
-        .btn-camo {
-            border-color: #444;
-            color: #888;
-        }
-        .btn-camo:hover {
-            color: #fff;
-            border-color: #fff;
-            box-shadow: 0 0 10px rgba(255,255,255,0.1);
-        }
+        .btn-camo { border-color: #2a2a2a; color: #555; }
+        .btn-camo:hover { color: #fff; border-color: #666; box-shadow: 0 0 12px rgba(255,255,255,0.06); }
+        .btn-primary { background: rgba(99,102,241,0.15); border-color: var(--accent-primary); color: var(--accent-primary); }
+        .btn-primary:hover { background: rgba(99,102,241,0.25); }
+        .btn-warning { border-color: rgba(239,68,68,0.3); color: #f87171; }
+        .btn-warning:hover { background: rgba(239,68,68,0.1); border-color: #ef4444; }
 
-        /* --- Grid System --- */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 1.5rem;
+        /* ── CONSENT BANNER ─────────────────────────────────────────────── */
+        .consent-banner {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            max-width: 520px;
+            background: #111216;
+            border: 1px solid var(--border-active);
+            border-radius: 14px;
+            padding: 1.1rem 1.3rem;
+            backdrop-filter: blur(12px);
+            z-index: 1100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            transition: opacity 0.3s;
         }
+        .consent-banner.hide { display: none; }
+        .consent-banner p { color: var(--text-secondary); margin-bottom: 0.2rem; }
+        /* FIX #11: styled inline code in consent banner */
+        .consent-banner code {
+            background: rgba(255,255,255,0.09);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.82em;
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+        .consent-banner .consent-note {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+        .consent-buttons { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .btn-small { padding: 0.3rem 0.9rem; font-size: 0.75rem; }
+
+        /* ── GRID ────────────────────────────────────────────────────────── */
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem; }
         .col-3 { grid-column: span 3; }
         .col-4 { grid-column: span 4; }
         .col-6 { grid-column: span 6; }
@@ -184,81 +229,169 @@
         .col-9 { grid-column: span 9; }
         .col-12 { grid-column: span 12; }
 
-        @media (max-width: 1024px) { .col-3 { grid-column: span 6; } .col-4 { grid-column: span 6; } }
-        @media (max-width: 768px) { .col-3, .col-4, .col-6, .col-8, .col-9 { grid-column: span 12; } }
+        @media (max-width: 1100px) {
+            .col-3 { grid-column: span 6; }
+            .col-4 { grid-column: span 6; }
+        }
+        @media (max-width: 768px) {
+            .col-3, .col-4, .col-6, .col-8, .col-9 { grid-column: span 12; }
+            .grid { gap: 0.875rem; }
+        }
 
-        /* --- Panels --- */
+        /* ── PANELS ──────────────────────────────────────────────────────── */
         .panel {
             background: var(--bg-panel);
             border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 14px;
+            padding: 1.4rem;
             position: relative;
-            transition: border-color 0.3s;
+            transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
-        .panel:hover { border-color: var(--border-active); }
-        
-        .panel.danger-glow { box-shadow: 0 0 20px rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); }
-        .panel.success-glow { box-shadow: 0 0 20px rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); }
+        .panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 60%);
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        .panel:hover { border-color: var(--border-active); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .panel.danger-glow { box-shadow: 0 0 24px rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.22); }
+        .panel.success-glow { box-shadow: 0 0 24px rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.22); }
+        .panel.primary-glow { box-shadow: 0 0 24px rgba(99,102,241,0.07); border-color: rgba(99,102,241,0.3); }
+
+        /* FIX #10: latency panel min-height */
+        .panel.latency-panel { min-height: 260px; }
 
         .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.1rem;
         }
         .panel-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--text-tertiary);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.12em;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
         }
 
-        /* --- Data Typography --- */
+        /* ── SHIMMER SKELETON ────────────────────────────────────────────── */
+        @keyframes shimmer {
+            0% { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, var(--border-subtle) 25%, var(--shimmer-color) 50%, var(--border-subtle) 75%);
+            background-size: 800px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            display: inline-block;
+            color: transparent !important;
+            pointer-events: none;
+            min-width: 80px;
+            height: 1em;
+            vertical-align: middle;
+        }
+        .skeleton.resolved { animation: none; background: none; color: inherit !important; min-width: unset; height: unset; }
+
+        /* ── DATA ROWS ───────────────────────────────────────────────────── */
         .data-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0;
+            padding: 0.65rem 0;
             border-bottom: 1px solid var(--border-subtle);
+            gap: 1rem;
         }
         .data-row:last-child { border-bottom: none; }
-        .data-key { font-size: 0.85rem; color: var(--text-secondary); }
-        .data-val { font-size: 0.85rem; color: var(--text-primary); font-family: var(--font-mono); text-align: right; }
-        
-        .mono-highlight {
-            background: rgba(255,255,255,0.05);
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: var(--accent-primary);
+        .data-key {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
         }
-        .risk-highlight { color: var(--accent-danger); }
+        .data-val {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            text-align: right;
+            word-break: break-all;
+        }
+        .mono-highlight {
+            background: rgba(99,102,241,0.1);
+            padding: 2px 7px;
+            border-radius: 4px;
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+        .risk-highlight { color: var(--accent-danger) !important; }
 
-        /* --- Risk Badges --- */
+        /* ── BADGES ──────────────────────────────────────────────────────── */
         .badge {
-            padding: 2px 8px;
+            padding: 3px 9px;
+            border-radius: 100px;
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+        .badge-red { background: rgba(239,68,68,0.12); color: var(--accent-danger); }
+        .badge-red .badge-dot { background: var(--accent-danger); }
+        .badge-yellow { background: rgba(245,158,11,0.12); color: var(--accent-warning); }
+        .badge-yellow .badge-dot { background: var(--accent-warning); }
+        .badge-green { background: rgba(16,185,129,0.12); color: var(--accent-success); }
+        .badge-green .badge-dot { background: var(--accent-success); }
+        .badge-blue { background: rgba(99,102,241,0.12); color: var(--accent-primary); }
+        .badge-blue .badge-dot { background: var(--accent-primary); }
+
+        /* ── SCORE / ENTROPY ─────────────────────────────────────────────── */
+        .score-container { text-align: center; padding: 0.75rem; }
+        .score-val {
+            font-size: 3.8rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            font-family: var(--font-display);
+            letter-spacing: -0.04em;
+            transition: color 0.5s;
+        }
+        .score-label { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 0.1em; }
+        .score-context { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.75rem; }
+        .score-tier {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 2px 10px;
             border-radius: 100px;
             font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
-        .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); }
-        .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
-        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); }
+        .bar-container { height: 5px; background: var(--border-subtle); border-radius: 3px; width: 100%; margin-top: 12px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; transition: width 1.2s var(--ease-premium), background 0.5s; border-radius: 3px; }
 
-        /* --- Canvas Visualizers --- */
+        /* ── CANVAS VISUALIZERS ──────────────────────────────────────────── */
         .canvas-container {
-            background: #000;
+            background: rgba(0,0,0,0.4);
             border: 1px solid var(--border-subtle);
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
-            margin-top: 1rem;
+            margin-top: 0.875rem;
             height: 100px;
             position: relative;
             display: flex;
@@ -267,831 +400,1309 @@
         }
         .canvas-label {
             position: absolute;
-            top: 5px; left: 5px;
-            font-size: 0.6rem;
+            top: 6px; left: 8px;
+            font-size: 0.58rem;
             color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
-        /* --- Gauges & Meters --- */
-        .score-container { text-align: center; padding: 1rem; }
-        .score-val { font-size: 3.5rem; font-weight: 200; color: var(--text-primary); line-height: 1; }
-        .score-label { font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem; text-transform: uppercase; }
-        
-        .bar-container {
-            height: 4px; background: var(--border-subtle);
-            border-radius: 2px; width: 100%; margin-top: 10px; overflow: hidden;
-        }
-        .bar-fill { height: 100%; width: 0%; transition: width 1s var(--ease-premium); }
-
-        /* --- Console --- */
+        /* ── CONSOLE ─────────────────────────────────────────────────────── */
         .console-output {
-            height: 150px; overflow-y: auto;
-            font-family: var(--font-mono); font-size: 0.75rem;
-            color: var(--text-secondary); padding: 0.5rem;
+            height: 140px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 0.73rem;
+            color: var(--text-secondary);
+            padding: 0.25rem 0;
         }
-        .log-entry { margin-bottom: 4px; border-left: 2px solid transparent; padding-left: 8px; }
+        .log-entry { margin-bottom: 3px; border-left: 2px solid transparent; padding-left: 8px; line-height: 1.5; }
         .log-entry.warn { border-left-color: var(--accent-warning); color: #fbbf24; }
         .log-entry.danger { border-left-color: var(--accent-danger); color: #f87171; }
-        .log-entry.system { border-left-color: var(--accent-primary); color: var(--accent-primary); }
+        .log-entry.system { border-left-color: var(--accent-primary); color: #818cf8; }
+        .log-entry .log-time { opacity: 0.4; margin-right: 4px; }
 
-        /* --- Recommendation Engine Styles --- */
+        /* ── RECOMMENDATIONS ─────────────────────────────────────────────── */
         .rec-card {
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.018);
             border-left: 3px solid var(--accent-primary);
-            padding: 1rem;
+            padding: 1rem 1.1rem;
             margin-bottom: 0.75rem;
-            border-radius: 0 6px 6px 0;
+            border-radius: 0 8px 8px 0;
+            animation: fadeIn 0.4s ease both;
         }
+        .rec-card:last-child { margin-bottom: 0; }
         .rec-card.critical { border-left-color: var(--accent-danger); }
         .rec-card.medium { border-left-color: var(--accent-warning); }
-        
-        .rec-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 8px; }
-        .rec-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
-        .rec-action { 
-            margin-top: 0.75rem; 
-            font-size: 0.75rem; 
+        .rec-card.info { border-left-color: var(--accent-primary); }
+        .rec-title {
+            font-weight: 700;
+            font-size: 0.88rem;
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rec-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+        .rec-action {
+            margin-top: 0.7rem;
+            font-size: 0.72rem;
             font-family: var(--font-mono);
-            background: rgba(0,0,0,0.3);
-            padding: 4px 8px;
-            border-radius: 4px;
+            background: rgba(0,0,0,0.35);
+            padding: 5px 9px;
+            border-radius: 5px;
             color: var(--text-primary);
             display: inline-block;
+            border: 1px solid var(--border-subtle);
         }
 
-        /* --- Modal --- */
+        /* FIX #15: security panel skeleton loading state */
+        .security-skeleton {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .security-skeleton-item {
+            height: 80px;
+            background: linear-gradient(90deg, var(--border-subtle) 25%, var(--shimmer-color) 50%, var(--border-subtle) 75%);
+            background-size: 800px 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+            border-left: 3px solid rgba(99,102,241,0.2);
+        }
+
+        /* ── MODAL ───────────────────────────────────────────────────────── */
         .modal-backdrop {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
-            z-index: 1000; display: none; justify-content: center; align-items: center;
-            opacity: 0; transition: opacity 0.3s;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.25s;
         }
         .modal-backdrop.active { display: flex; opacity: 1; }
         .modal-content {
-            background: #131315; width: 90%; max-width: 800px; max-height: 90vh;
-            border: 1px solid var(--border-subtle); border-radius: 12px;
-            display: flex; flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            background: #0f0f12;
+            width: 90%;
+            max-width: 820px;
+            max-height: 90vh;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 32px 64px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+            animation: modalIn 0.25s var(--ease-premium);
         }
-        .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; }
-        .modal-body { padding: 2rem; overflow-y: auto; }
-        
-        .accordion-item { border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 1rem; overflow: hidden; }
+        @keyframes modalIn { from { transform: scale(0.96) translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .modal-header {
+            padding: 1.4rem 1.8rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { font-size: 1.1rem; font-weight: 700; }
+        .modal-body { padding: 1.8rem; overflow-y: auto; }
+
+        .accordion-item { border: 1px solid var(--border-subtle); border-radius: 10px; margin-bottom: 0.875rem; overflow: hidden; }
         .accordion-header {
-            padding: 1rem; background: rgba(255,255,255,0.02); cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            font-weight: 600; font-size: 0.9rem;
+            padding: 1rem 1.2rem;
+            background: rgba(255,255,255,0.02);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            user-select: none;
         }
-        .accordion-header:hover { background: rgba(255,255,255,0.05); }
-        .accordion-content { padding: 1.5rem; display: none; background: #0a0a0c; border-top: 1px solid var(--border-subtle); }
-        .accordion-content.open { display: block; }
+        .accordion-header:hover { background: rgba(255,255,255,0.045); }
+        .accordion-chevron {
+            width: 8px; height: 8px;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: rotate(45deg);
+            transition: transform 0.2s;
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+        }
+        .accordion-header[aria-expanded="true"] .accordion-chevron { transform: rotate(-135deg); }
+        .accordion-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s var(--ease-premium), padding 0.3s;
+            background: #08080a;
+            border-top: 0px solid var(--border-subtle);
+        }
+        .accordion-content.open { max-height: 400px; padding: 1.4rem 1.2rem; border-top-width: 1px; }
+        .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 600px) { .impact-grid { grid-template-columns: 1fr; } }
+        .impact-box { padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.02); }
+        .impact-title { font-size: 0.68rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.4rem; letter-spacing: 0.1em; }
 
-        .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
-        .impact-box { padding: 1rem; border-radius: 6px; background: rgba(255,255,255,0.02); }
-        .impact-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+        /* ── CAMO HINT ───────────────────────────────────────────────────── */
+        /* FIX #12: explicit visible color for camo hint */
+        .camo-hint { display: none; color: #555 !important; font-size: 0.65rem; }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        /* ── SCAN STATUS INDICATOR ───────────────────────────────────────── */
+        .scan-status { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-tertiary); }
+        .scan-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent-success);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+        .scan-dot.done { animation: none; background: var(--text-tertiary); }
+
+        /* ── MISC ────────────────────────────────────────────────────────── */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+
+        .divider { border: none; border-top: 1px solid var(--border-subtle); margin: 1rem 0; }
+        .text-danger { color: var(--accent-danger); }
+        .text-warn { color: var(--accent-warning); }
+        .text-success { color: var(--accent-success); }
     </style>
 </head>
 <body>
 
-    <div class="layout">
-        <header class="header-bar">
-            <div class="header-title">
-                <h1>Panopticon</h1>
+<!-- CONSENT BANNER (GDPR/CCPA compliant) -->
+<div id="consentBanner" class="consent-banner" role="dialog" aria-labelledby="consentTitle" aria-modal="true">
+    <p><strong id="consentTitle">🔍 Privacy Demonstration</strong> — Panopticon collects <strong>no server-side data</strong>. All diagnostics run locally in your browser to show what information any website can gather passively (IP, hardware, canvas hash, etc.).</p>
+    <p>We use third-party IP geolocation APIs (<code>ipapi.co</code>, <code>ip-api.com</code>) — their privacy policies apply. No data is sold or stored by us.</p>
+    <!-- FIX #17: inform users consent is tab-scoped -->
+    <p class="consent-note">Note: consent is remembered for this tab session only and resets when you open a new tab.</p>
+    <div class="consent-buttons">
+        <button id="declineConsentBtn" class="btn-ghost btn-small">Leave / Decline</button>
+        <button id="acceptConsentBtn" class="btn-ghost btn-primary btn-small">I Understand, Continue</button>
+    </div>
+</div>
+
+<div class="layout">
+
+    <!-- HEADER -->
+    <header class="header-bar">
+        <div class="header-left header-title">
+            <h1>Panopticon</h1>
+            <span class="header-subtitle">Advanced Privacy Diagnostics</span>
+        </div>
+        <div class="header-right">
+            <div class="header-status-row">
+                <div class="scan-status">
+                    <!-- FIX #8: aria-live for dynamic scan status -->
+                    <div class="scan-dot" id="scanDot"></div>
+                    <span id="scanStatusText" aria-live="polite" aria-atomic="true">Waiting for consent...</span>
+                </div>
+                <span class="camo-hint" id="camoHint">Hover any panel to reveal</span>
             </div>
             <div class="header-actions">
-                <button class="btn-ghost btn-camo" id="camouflageBtn">Camouflage Mode</button>
-                <button class="btn-ghost" id="copyReportBtn">Copy Report JSON</button>
-                <button class="btn-ghost" id="infoTrigger" style="color: var(--accent-primary); border-color: var(--accent-primary);">
-                    System Overview <span class="arrow-icon"></span>
+                <button class="btn-ghost btn-camo" id="camouflageBtn" aria-pressed="false">
+                    <span>⬛</span> Camouflage Mode
+                </button>
+                <button class="btn-ghost" id="copyReportBtn">
+                    <span>📋</span> Copy JSON
+                </button>
+                <button class="btn-ghost btn-warning" id="resetSessionBtn">
+                    <span>⟳</span> Reset Session
+                </button>
+                <button class="btn-ghost btn-primary" id="infoTrigger" aria-haspopup="dialog">
+                    System Overview →
                 </button>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <div class="grid">
-            
-            <div class="panel col-4">
-                <div class="panel-header">
-                    <span class="panel-label">Public Identity</span>
-                    <div class="badge badge-red">High Risk</div>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Public IP</span>
-                    <span class="data-val" id="publicIP">Scanning...</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">ISP / Org</span>
-                    <span class="data-val" id="ispInfo">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Location</span>
-                    <span class="data-val" id="geoLoc">--</span>
-                </div>
-                 <div class="data-row">
-                    <span class="data-key">VPN Check</span>
-                    <span class="data-val" id="vpnStatus">Checking...</span>
-                </div>
+    <div class="grid">
+
+        <!-- PUBLIC IDENTITY -->
+        <div class="panel col-4" id="identityPanel">
+            <div class="panel-header">
+                <span class="panel-label">⚠ Public Identity</span>
+                <div class="badge badge-red" id="identityBadge"><span class="badge-dot"></span>Scanning</div>
             </div>
-
-            <div class="panel col-4">
-                <div class="panel-header">
-                    <span class="panel-label">Network Diagnostics</span>
-                    <div id="netStatus" class="badge badge-green">Online</div>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">WebRTC Local IP</span>
-                    <span class="data-val" id="localIP">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Latency (RTT)</span>
-                    <span class="data-val" id="pingVal">-- ms</span>
-                </div>
-                 <div class="data-row">
-                    <span class="data-key">Connection Type</span>
-                    <span class="data-val" id="connType">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Downlink Est.</span>
-                    <span class="data-val" id="downlink">-- Mbps</span>
-                </div>
+            <div class="data-row">
+                <span class="data-key">Public IP</span>
+                <span class="data-val skeleton" id="publicIP">Scanning...</span>
             </div>
-
-            <div class="panel col-4 danger-glow">
-                <div class="panel-header">
-                    <span class="panel-label">Uniqueness Score</span>
-                </div>
-                <div class="score-container">
-                    <div class="score-val" id="entropyScore">--</div>
-                    <div class="score-label">Entropy Points</div>
-                    <div class="bar-container">
-                        <div class="bar-fill" id="entropyBar" style="background: var(--accent-secondary);"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem;">
-                        You are likely unique among <span id="uniqueRatio" style="color: var(--text-primary); font-weight: bold;">...</span> users.
-                    </p>
-                </div>
+            <div class="data-row">
+                <span class="data-key">ISP / Org</span>
+                <span class="data-val skeleton" id="ispInfo">--</span>
             </div>
-
-            <div class="panel col-6">
-                <div class="panel-header">
-                    <span class="panel-label">Hardware Profile</span>
-                    <div class="badge badge-yellow">Moderate Risk</div>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">OS / Platform</span>
-                    <span class="data-val" id="osVal">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">CPU Cores</span>
-                    <span class="data-val" id="cpuVal">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">RAM (Est)</span>
-                    <span class="data-val" id="ramVal">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Screen Res</span>
-                    <span class="data-val" id="resVal">--</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Battery Status</span>
-                    <span class="data-val" id="batteryVal">Protected</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">GPU Renderer</span>
-                    <span class="data-val" id="gpuVal" style="font-size: 0.7rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</span>
-                </div>
+            <div class="data-row">
+                <span class="data-key">Location</span>
+                <span class="data-val skeleton" id="geoLoc">--</span>
             </div>
-
-            <div class="panel col-6">
-                <div class="panel-header">
-                    <span class="panel-label">Canvas & Audio Fingerprint</span>
-                    <div class="badge badge-red">High Risk</div>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Canvas Hash</span>
-                    <span class="data-val mono-highlight" id="canvasHash">Generating...</span>
-                </div>
-                <div class="canvas-container">
-                    <span class="canvas-label">Hidden Canvas Render</span>
-                    <canvas id="fingerprintCanvas" height="100"></canvas>
-                </div>
-                <div class="data-row" style="margin-top: 1rem;">
-                    <span class="data-key">Audio Context Hash</span>
-                    <span class="data-val mono-highlight" id="audioHash">Generating...</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Installed Fonts (Subset)</span>
-                    <span class="data-val" id="fontCount">Not Implemented</span>
-                </div>
-            </div>
-
-            <div class="panel col-12" id="securityPanel" style="border-color: var(--accent-primary); display:none;">
-                <div class="panel-header">
-                    <span class="panel-label">Deep Security Analysis & Countermeasures</span>
-                    <div class="badge badge-green">Generated</div>
-                </div>
-                <div id="securityRecommendations">
-                    </div>
-            </div>
-
-            <div class="panel col-8">
-                <div class="panel-header">
-                    <span class="panel-label">Latency Monitor</span>
-                </div>
-                <div style="height: 200px;">
-                    <canvas id="pingChart"></canvas>
-                </div>
-            </div>
-
-            <div class="panel col-4">
-                <div class="panel-header">
-                    <span class="panel-label">Behavioral Tracking</span>
-                    <div class="badge badge-yellow">Live</div>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Mouse Position</span>
-                    <span class="data-val" id="mousePos">0, 0</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-key">Keystrokes</span>
-                    <span class="data-val" id="keyCount">0</span>
-                </div>
-                 <div class="data-row">
-                    <span class="data-key">Time on Page</span>
-                    <span class="data-val" id="timeOnPage">0s</span>
-                </div>
-                <div class="canvas-container" style="background: #1a1a1a;">
-                    <span class="canvas-label">Movement Heatmap</span>
-                    <canvas id="mouseMap" width="300" height="100"></canvas>
-                </div>
-            </div>
-
-            <div class="panel col-12">
-                <div class="panel-header">
-                    <span class="panel-label">System Log</span>
-                </div>
-                <div class="console-output" id="consoleLog"></div>
+            <div class="data-row">
+                <span class="data-key">VPN/Proxy</span>
+                <span class="data-val skeleton" id="vpnStatus">Checking...</span>
             </div>
         </div>
-    </div>
 
-    <div class="modal-backdrop" id="infoModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Technical Overview</h3>
-                <button class="btn-ghost" id="closeModal">Close</button>
+        <!-- NETWORK DIAGNOSTICS -->
+        <div class="panel col-4" id="networkPanel">
+            <div class="panel-header">
+                <span class="panel-label">⚡ Network Diagnostics</span>
+                <div class="badge badge-green" id="netStatus"><span class="badge-dot"></span>Online</div>
             </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.6;">
-                    Panopticon demonstrates client-side data collection techniques. It illustrates how modern web applications can identify and track users without utilizing cookies, relying instead on browser APIs, hardware differences, and network behaviors.
+            <div class="data-row">
+                <span class="data-key">WebRTC Local IP</span>
+                <span class="data-val skeleton" id="localIP">Probing...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Latency (RTT)</span>
+                <span class="data-val" id="pingVal">-- ms</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Connection Type</span>
+                <span class="data-val skeleton" id="connType">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Downlink Est.</span>
+                <span class="data-val skeleton" id="downlink">-- Mbps</span>
+            </div>
+        </div>
+
+        <!-- UNIQUENESS SCORE -->
+        <div class="panel col-4 danger-glow">
+            <div class="panel-header">
+                <span class="panel-label">🔮 Fingerprint Score</span>
+            </div>
+            <div class="score-container">
+                <div class="score-val" id="entropyScore">0</div>
+                <div class="score-label">Entropy Points</div>
+                <div class="bar-container">
+                    <div class="bar-fill" id="entropyBar"></div>
+                </div>
+                <p class="score-context">
+                    Unique among ~<strong id="uniqueRatio">1</strong> users
                 </p>
+                <span class="score-tier" id="scoreTier" style="background: rgba(16,185,129,0.12); color: var(--accent-success);">Low Risk</span>
+            </div>
+        </div>
 
-                <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid var(--accent-primary);">
-                    <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">For Developers</h4>
-                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        Understand the code behind these diagnostics. View the source to see how Canvas Fingerprinting, WebRTC IP leakage, and Audio Context analysis are implemented in pure JavaScript.
-                    </p>
-                    <a href="https://GitHub.com/sanjaykohli/Panopticon" target="_blank" class="btn-ghost" style="display: inline-flex; background: var(--bg-panel); color: var(--text-primary); border-color: var(--text-tertiary);">
-                        View Source on GitHub
-                    </a>
+        <!-- HARDWARE PROFILE -->
+        <div class="panel col-6">
+            <div class="panel-header">
+                <span class="panel-label">🖥 Hardware Profile</span>
+                <div class="badge badge-yellow"><span class="badge-dot"></span>Moderate Risk</div>
+            </div>
+            <div class="data-row">
+                <span class="data-key">OS / Platform</span>
+                <span class="data-val skeleton" id="osVal">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">CPU Cores</span>
+                <span class="data-val skeleton" id="cpuVal">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">RAM (Est.)</span>
+                <span class="data-val skeleton" id="ramVal">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Screen Resolution</span>
+                <span class="data-val skeleton" id="resVal">--</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Battery Status</span>
+                <span class="data-val" id="batteryVal">Protected</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">GPU Renderer</span>
+                <span class="data-val skeleton" id="gpuVal" style="font-size: 0.68rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</span>
+            </div>
+        </div>
+
+        <!-- CANVAS & AUDIO FINGERPRINT -->
+        <div class="panel col-6">
+            <div class="panel-header">
+                <span class="panel-label">🔑 Canvas & Audio Fingerprint</span>
+                <div class="badge badge-red"><span class="badge-dot"></span>High Risk</div>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Canvas Hash (SHA-256)</span>
+                <span class="data-val mono-highlight skeleton" id="canvasHash">Generating...</span>
+            </div>
+            <!-- Hidden canvas for actual fingerprinting (off-screen) -->
+            <canvas id="fingerprintCanvas" width="300" height="150"
+                style="position:absolute; left:-9999px; top:-9999px; opacity:0; pointer-events:none;"
+                aria-hidden="true"></canvas>
+            <div class="canvas-container">
+                <span class="canvas-label">Canvas Render Preview</span>
+                <!-- FIX #1: canvasPreview properly declared in HTML so cacheDOM can find it -->
+                <canvas id="canvasPreview" height="96" width="300"></canvas>
+            </div>
+            <div class="data-row" style="margin-top: 0.875rem;">
+                <span class="data-key">Audio Context Hash</span>
+                <span class="data-val mono-highlight skeleton" id="audioHash">Generating...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">User Agent Token</span>
+                <span class="data-val mono-highlight skeleton" id="uaToken" style="font-size:0.65rem; max-width: 200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">--</span>
+            </div>
+        </div>
+
+        <!-- SECURITY RECOMMENDATIONS (shown immediately in skeleton state) -->
+        <!-- FIX #15: panel visible from start with skeleton loader -->
+        <div class="panel col-12 primary-glow" id="securityPanel">
+            <div class="panel-header">
+                <span class="panel-label">🛡 Security Analysis & Countermeasures</span>
+                <div class="badge badge-blue" id="securityBadge"><span class="badge-dot"></span>Pending</div>
+            </div>
+            <div id="securityRecommendations">
+                <div class="security-skeleton">
+                    <div class="security-skeleton-item"></div>
+                    <div class="security-skeleton-item" style="animation-delay:0.15s;opacity:0.7;"></div>
+                    <div class="security-skeleton-item" style="animation-delay:0.3s;opacity:0.4;"></div>
                 </div>
+            </div>
+        </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header">
-                        <span>Canvas Fingerprinting</span>
+        <!-- LATENCY MONITOR -->
+        <!-- FIX #10: min-height via .latency-panel class -->
+        <div class="panel col-8 latency-panel">
+            <div class="panel-header">
+                <span class="panel-label">📡 Latency Monitor</span>
+                <span id="latencyAvg" style="font-size:0.75rem; color: var(--text-tertiary);">avg: -- ms</span>
+            </div>
+            <div style="flex: 1; position: relative; min-height: 180px;">
+                <canvas id="pingChart"></canvas>
+            </div>
+        </div>
+
+        <!-- BEHAVIORAL TRACKING -->
+        <div class="panel col-4">
+            <div class="panel-header">
+                <span class="panel-label">👁 Behavioral Tracking</span>
+                <div class="badge badge-yellow"><span class="badge-dot"></span>Live</div>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Mouse Position</span>
+                <span class="data-val" id="mousePos">0, 0</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Keystrokes (count)</span>
+                <span class="data-val" id="keyCount">0</span>
+            </div>
+            <div class="data-row">
+                <span class="data-key">Time on Page</span>
+                <span class="data-val" id="timeOnPage">0s</span>
+            </div>
+            <!-- FIX #7: mouseMap sized by CSS, ResizeObserver keeps it crisp -->
+            <div class="canvas-container" style="background: #0a0a0c; flex: 1; margin-top: 0.875rem;">
+                <span class="canvas-label">Mouse Movement Heatmap</span>
+                <canvas id="mouseMap" style="width:100%; height:100%;"></canvas>
+            </div>
+        </div>
+
+        <!-- SYSTEM LOG -->
+        <div class="panel col-12">
+            <div class="panel-header">
+                <span class="panel-label">⌨ System Log</span>
+                <button class="btn-ghost" id="clearLogBtn" style="font-size: 0.72rem; padding: 2px 8px;">Clear</button>
+            </div>
+            <div class="console-output" id="consoleLog" aria-live="polite" aria-atomic="false"></div>
+        </div>
+
+    </div><!-- .grid -->
+</div><!-- .layout -->
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Technical Overview</h3>
+            <button class="btn-ghost" id="closeModal" aria-label="Close dialog">✕ Close</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.7; font-size: 0.9rem;">
+                Panopticon demonstrates client-side data collection techniques. It illustrates how modern web applications can identify and track users without cookies, relying instead on browser APIs, hardware differences, and network behaviors.
+            </p>
+
+            <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.25);">
+                <h4 style="color: var(--text-primary); margin-bottom: 0.4rem; font-size: 0.95rem;">For Developers</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+                    Understand the code behind these diagnostics. View the source to see how Canvas Fingerprinting, WebRTC IP leakage, and Audio Context analysis are implemented in pure JavaScript.
+                </p>
+                <a href="https://github.com/sanjaykohli/Panopticon" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="display: inline-flex; background: var(--bg-panel);">
+                    View Source on GitHub ↗
+                </a>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header" id="acc1-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc1-content">
+                    <span>Canvas Fingerprinting</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
                         <div class="badge badge-red">Critical Risk</div>
+                        <span class="accordion-chevron"></span>
                     </div>
-                    <div class="accordion-content">
-                        <div class="impact-grid">
-                            <div class="impact-box">
-                                <div class="impact-title">Technique</div>
-                                <p style="font-size: 0.85rem;">The browser renders hidden text and gradients. Subtle differences in GPU rendering, anti-aliasing, and OS font handling produce unique pixel data.</p>
-                            </div>
-                            <div class="impact-box">
-                                <div class="impact-title">Privacy Impact</div>
-                                <p style="font-size: 0.85rem;">Creates a persistent identifier (hash) that remains consistent even after clearing cookies or utilizing private browsing modes.</p>
-                            </div>
+                </div>
+                <div class="accordion-content" id="acc1-content" role="region" aria-labelledby="acc1-header">
+                    <div class="impact-grid">
+                        <div class="impact-box">
+                            <div class="impact-title">Technique</div>
+                            <p style="font-size: 0.85rem; line-height: 1.6;">The browser renders hidden text and gradients. Subtle differences in GPU rendering, anti-aliasing, and OS font handling produce unique pixel data. We hash this data with SHA-256.</p>
+                        </div>
+                        <div class="impact-box">
+                            <div class="impact-title">Privacy Impact</div>
+                            <p style="font-size: 0.85rem; line-height: 1.6;">Creates a persistent identifier that remains consistent even after clearing cookies or using private browsing. Incognito mode does NOT protect you.</p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header">
-                        <span>WebRTC IP Leak</span>
+            <div class="accordion-item">
+                <div class="accordion-header" id="acc2-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc2-content">
+                    <span>WebRTC IP Leak</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
                         <div class="badge badge-red">Critical Risk</div>
+                        <span class="accordion-chevron"></span>
                     </div>
-                    <div class="accordion-content">
-                        <div class="impact-grid">
-                            <div class="impact-box">
-                                <div class="impact-title">Technique</div>
-                                <p style="font-size: 0.85rem;">WebRTC establishes peer-to-peer connections. To facilitate this, it may expose local LAN IP addresses and, in some configurations, the true public IP behind a VPN.</p>
-                            </div>
-                            <div class="impact-box">
-                                <div class="impact-title">Privacy Impact</div>
-                                <p style="font-size: 0.85rem;">Reveals internal network architecture and potentially bypasses VPN protections to disclose physical location.</p>
-                            </div>
+                </div>
+                <div class="accordion-content" id="acc2-content" role="region" aria-labelledby="acc2-header">
+                    <div class="impact-grid">
+                        <div class="impact-box">
+                            <div class="impact-title">Technique</div>
+                            <p style="font-size: 0.85rem; line-height: 1.6;">WebRTC establishes peer-to-peer connections. To facilitate this, it may expose local LAN IP addresses and, in some configurations, the real public IP behind a VPN.</p>
+                        </div>
+                        <div class="impact-box">
+                            <div class="impact-title">Privacy Impact</div>
+                            <p style="font-size: 0.85rem; line-height: 1.6;">Reveals internal network architecture and potentially bypasses VPN protections to disclose physical location.</p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="accordion-item">
-                    <div class="accordion-header">
-                        <span>Hardware & Audio Context</span>
+            <div class="accordion-item">
+                <div class="accordion-header" id="acc3-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc3-content">
+                    <span>Hardware & Audio Context</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
                         <div class="badge badge-yellow">Medium Risk</div>
+                        <span class="accordion-chevron"></span>
                     </div>
-                    <div class="accordion-content">
-                        <div class="impact-grid">
-                            <div class="impact-box">
-                                <div class="impact-title">Technique</div>
-                                <p style="font-size: 0.85rem;">Scripts analyze CPU core count, RAM estimates, battery behavior, and audio signal processing characteristics.</p>
-                            </div>
-                            <div class="impact-box">
-                                <div class="impact-title">Privacy Impact</div>
-                                <p style="font-size: 0.85rem;">Contributes to a composite fingerprint. While individual metrics are not unique, the aggregate profile is highly specific.</p>
-                            </div>
+                </div>
+                <div class="accordion-content" id="acc3-content" role="region" aria-labelledby="acc3-header">
+                    <div class="impact-grid">
+                        <div class="impact-box">
+                            <div class="impact-title">Technique</div>
+                            <p style="font-size: 0.85rem; line-height: 1.6;">Scripts analyze CPU core count, RAM estimates, battery behavior, and audio signal processing characteristics unique to each device's hardware stack.</p>
+                        </div>
+                        <div class="impact-box">
+                            <div class="impact-title">Privacy Impact</div>
+                            <p style="font-size: 0.85rem; line-height: 1.6;">Contributes to a composite fingerprint. While individual metrics are not unique, the aggregate profile is highly specific to you.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        /**
-         * PANOPTICON ENGINE
-         * Pure Client-Side Privacy Analysis
-         */
-        const App = {
-            state: {
-                entropy: 0,
-                logHistory: [],
-                fingerprintData: {},
-                mousePoints: [],
-                startTime: Date.now(),
-                keyCount: 0, // Fix #2: Initialize keyCount
-                leaks: {
-                    webRTC: false,
-                    battery: false,
-                    highEntropy: false
-                }
-            },
+<script>
+/**
+ * PANOPTICON v4 — All fixes from review applied:
+ *  #1  canvasPreview properly cached via id in DOM
+ *  #2  Real-latency beacon via Cloudflare trace (no-cors, cache-busted)
+ *  #3  Entropy ceiling raised to 135 (actual sum of all module points)
+ *  #4  WebRTC ICE candidate guard (resolved flag)
+ *  #5  pc.createOffer wrapped in try/catch
+ *  #6  ISP check reads from fingerprintData.identity.org not DOM
+ *  #7  mouseMap ResizeObserver keeps canvas pixel-crisp
+ *  #8  scanStatusText has aria-live="polite" in HTML
+ *  #9  Header actions split into two rows (status + buttons)
+ * #10  Latency panel has min-height via CSS class
+ * #11  <code> in consent banner styled with pill treatment
+ * #12  camo-hint has explicit color
+ * #13  Entropy counter animates from 0 via rAF
+ * #14  Log capped at 50 entries
+ * #15  Security panel shown immediately with skeleton state
+ * #16  Consent gate verified — no fetches before startDiagnostics()
+ * #17  Consent banner notes tab-scope of session storage
+ */
+const App = {
+    state: {
+        consentGiven: false,
+        entropy: 0,
+        displayedEntropy: 0,    // FIX #13: tracked separately for animation
+        fingerprintData: {},
+        startTime: Date.now(),
+        keyCount: 0,
+        pingHistory: [],
+        _pingInterval: null,
+        _timerInterval: null,
+        _entropyRAF: null,      // FIX #13: rAF handle
+        leaks: { webRTC: false, battery: false },
+    },
 
-            dom: {},
+    dom: {},
 
-            init() {
-                this.cacheDOM();
-                this.initUI();
-                this.initChart();
-                this.setupListeners();
-                
-                // Execute Modules
-                this.log("Initializing diagnostics engine...", "system");
-                this.modules.identity.run();
-                this.modules.network.run();
-                this.modules.hardware.run();
-                this.modules.canvas.run();
-                this.modules.audio.run();
-                this.modules.behavior.run();
+    /* ─── BOOT ───────────────────────────────────────────────────── */
+    async init() {
+        this.cacheDOM();
+        this.initUI();
+        this.setupListeners();
+        this.initChart();
 
-                // Trigger Analysis Report after 4 seconds
-                setTimeout(() => this.generateDeepInsights(), 4000);
-            },
+        const consentGiven = sessionStorage.getItem('panopticon_consent');
+        if (consentGiven === 'true') {
+            this.state.consentGiven = true;
+            this.dom.consentBanner.classList.add('hide');
+            this.startDiagnostics();
+        } else {
+            this.dom.consentBanner.classList.remove('hide');
+            this.dom.scanStatusText.textContent = 'Awaiting consent';
+        }
+    },
 
-            cacheDOM() {
-                const ids = [
-                    'publicIP', 'ispInfo', 'geoLoc', 'vpnStatus', 'localIP', 
-                    'pingVal', 'connType', 'downlink', 'osVal', 'cpuVal', 
-                    'ramVal', 'resVal', 'batteryVal', 'gpuVal', 'canvasHash', 
-                    'fingerprintCanvas', 'audioHash', 'fontCount', 'mousePos', 
-                    'keyCount', 'timeOnPage', 'mouseMap', 'consoleLog', 
-                    'entropyScore', 'entropyBar', 'uniqueRatio', 'infoModal', 
-                    'closeModal', 'infoTrigger', 'copyReportBtn', 'netStatus',
-                    'securityPanel', 'securityRecommendations', 'camouflageBtn'
-                ];
-                ids.forEach(id => this.dom[id] = document.getElementById(id));
-            },
+    startDiagnostics() {
+        this.log('Panopticon — diagnostics started (consent given)', 'system');
+        this.dom.scanStatusText.textContent = 'Scanning...';
+        this.dom.scanDot?.classList.remove('done');
 
-            setupListeners() {
-                // CAMOUFLAGE TOGGLE LOGIC
-                this.dom.camouflageBtn.onclick = () => {
-                    document.body.classList.toggle('camouflage-active');
-                    const isActive = document.body.classList.contains('camouflage-active');
-                    this.dom.camouflageBtn.textContent = isActive ? "Reveal UI" : "Camouflage Mode";
-                    
-                    if(isActive) {
-                        this.log("Camouflage Mode Activated: Low Contrast Protocol", "warn");
-                    } else {
-                        this.log("Camouflage Mode Deactivated", "system");
-                    }
-                };
+        Promise.allSettled([
+            this.modules.identity.run(),
+            this.modules.network.run(),
+            this.modules.hardware.run(),
+            this.modules.canvas.run(),
+            this.modules.audio.run(),
+            this.modules.behavior.run(),
+        ]).then(() => {
+            this.scanComplete();
+            this.generateDeepInsights();
+        });
+    },
 
-                // Modal Logic
-                this.dom.infoTrigger.onclick = () => {
-                    this.dom.infoModal.classList.add('active');
-                };
-                this.dom.closeModal.onclick = () => this.dom.infoModal.classList.remove('active');
-                
-                // Fix #5: Move accordion listeners here to avoid multiple bindings
-                document.querySelectorAll('.accordion-header').forEach(header => {
-                    header.onclick = () => {
-                        const content = header.nextElementSibling;
-                        content.classList.toggle('open');
-                    }
-                });
+    /* ─── DOM CACHE ─────────────────────────────────────────────── */
+    cacheDOM() {
+        // FIX #1: canvasPreview is now included (removed erroneous exclusion comment)
+        const ids = [
+            'consentBanner','acceptConsentBtn','declineConsentBtn','resetSessionBtn',
+            'publicIP','ispInfo','geoLoc','vpnStatus','localIP',
+            'pingVal','connType','downlink','osVal','cpuVal',
+            'ramVal','resVal','batteryVal','gpuVal','canvasHash',
+            'fingerprintCanvas','canvasPreview','audioHash','uaToken',
+            'mousePos','keyCount','timeOnPage','mouseMap','consoleLog',
+            'entropyScore','entropyBar','uniqueRatio','scoreTier',
+            'infoModal','closeModal','infoTrigger','copyReportBtn','netStatus',
+            'securityPanel','securityRecommendations','securityBadge',
+            'camouflageBtn','camoHint','scanDot','scanStatusText',
+            'identityBadge','clearLogBtn','latencyAvg',
+        ];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) console.warn(`[Panopticon] Missing DOM element: #${id}`);
+            this.dom[id] = el;
+        });
+    },
 
-                // Copy Report
-                this.dom.copyReportBtn.onclick = () => {
-                    const report = JSON.stringify(this.state.fingerprintData, null, 2);
-                    navigator.clipboard.writeText(report).then(() => {
-                        this.dom.copyReportBtn.textContent = "Copied!";
-                        setTimeout(() => this.dom.copyReportBtn.textContent = "Copy Report JSON", 2000);
-                    });
-                };
+    /* ─── LISTENERS ─────────────────────────────────────────────── */
+    setupListeners() {
+        // Consent
+        this.dom.acceptConsentBtn.addEventListener('click', () => {
+            sessionStorage.setItem('panopticon_consent', 'true');
+            this.dom.consentBanner.classList.add('hide');
+            this.state.consentGiven = true;
+            this.startDiagnostics();
+        });
 
-                // Online/Offline
-                window.addEventListener('offline', () => {
-                    this.dom.netStatus.className = "badge badge-red";
-                    this.dom.netStatus.textContent = "Offline";
-                    this.log("Network connection lost", "danger");
-                });
-            },
+        this.dom.declineConsentBtn.addEventListener('click', () => {
+            alert('You declined data collection. The tool will not run.\n\nRefresh the page to give consent later.');
+            document.body.innerHTML = `
+                <div style="text-align:center;margin-top:4rem;color:#8892a4;font-family:'Syne',sans-serif;">
+                    <h1 style="font-size:2rem;margin-bottom:1rem;color:#f0f2f8;">Panopticon</h1>
+                    <p>Diagnostics disabled — consent not given.<br>Refresh to start over.</p>
+                </div>`;
+        });
 
-            modules: {
-                // 1. Identity (Public IP APIs)
-                identity: {
-                    run: async () => {
-                        App.log("Querying public identity endpoints...", "system");
-                        try {
-                            const response = await Promise.race([
-                                fetch('https://ipapi.co/json/'),
-                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                            ]);
-                            
-                            if (!response.ok) throw new Error('API Blocked');
-                            
-                            const data = await response.json();
-                            App.dom.publicIP.textContent = data.ip;
-                            App.dom.ispInfo.textContent = data.org || data.asn;
-                            App.dom.geoLoc.textContent = `${data.city}, ${data.country_code}`;
-                            
-                            // Simple Heuristics for VPN
-                            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                            const isMismatch = !timezone.includes(data.timezone); 
-                            App.dom.vpnStatus.textContent = isMismatch ? "Likely VPN/Proxy" : "Direct Connection";
-                            if(isMismatch) {
-                                App.dom.vpnStatus.className = "data-val risk-highlight";
-                                App.log("Timezone/IP location mismatch detected.", "warn");
-                            }
-
-                            App.updateEntropy(50);
-                            App.state.fingerprintData.identity = data;
-
-                        } catch (e) {
-                            App.dom.publicIP.textContent = "Blocked/Hidden";
-                            App.dom.ispInfo.textContent = "Unknown";
-                            App.log("Public IP API blocked by privacy tools.", "system");
-                        }
-                    }
-                },
-
-                // 2. Network (WebRTC, Connection, Ping)
-                network: {
-                    run: () => {
-                        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-                        if (conn) {
-                            App.dom.connType.textContent = conn.effectiveType ? conn.effectiveType.toUpperCase() : 'Unknown';
-                            App.dom.downlink.textContent = conn.downlink ? `~${conn.downlink} Mbps` : '--';
-                        }
-
-                        // Fix #4: Fix WebRTC Memory Leak & connection handling
-                        App.log("Attempting WebRTC Local IP leak...", "system");
-                        const pc = new RTCPeerConnection({iceServers: []});
-                        pc.createDataChannel('');
-                        
-                        // Safety timeout to close connection if no candidate found
-                        const leakTimeout = setTimeout(() => {
-                            if(pc.signalingState !== 'closed') pc.close();
-                        }, 5000);
-
-                        pc.onicecandidate = (e) => {
-                            if (!e.candidate) return;
-                            const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
-                            const match = ipRegex.exec(e.candidate.candidate);
-                            if (match) {
-                                App.dom.localIP.textContent = match[1];
-                                App.dom.localIP.classList.add('risk-highlight');
-                                App.log(`WebRTC Leak: Found Local IP ${match[1]}`, "danger");
-                                App.state.leaks.webRTC = true;
-                                App.updateEntropy(20);
-                                App.state.fingerprintData.localIP = match[1];
-                                
-                                // Close immediately on success and clear timeout
-                                clearTimeout(leakTimeout);
-                                pc.close();
-                            }
-                        };
-                        pc.createOffer().then(d => pc.setLocalDescription(d)).catch(() => {});
-
-                        // Ping Heartbeat
-                        setInterval(() => {
-                            const start = performance.now();
-                            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
-                                .then(() => {
-                                    const rtt = Math.round(performance.now() - start);
-                                    App.dom.pingVal.textContent = `${rtt} ms`;
-                                    App.updateChart(rtt);
-                                }).catch(() => {});
-                        }, 2000);
-                    }
-                },
-
-                // 3. Hardware (Navigator props)
-                hardware: {
-                    run: async () => {
-                        const os = navigator.platform;
-                        App.dom.osVal.textContent = os;
-                        App.dom.cpuVal.textContent = navigator.hardwareConcurrency || "Unknown";
-                        App.dom.ramVal.textContent = navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : "Unknown";
-                        
-                        const width = window.screen.width;
-                        const height = window.screen.height;
-                        App.dom.resVal.textContent = `${width}x${height} (Depth: ${window.screen.colorDepth})`;
-                        
-                        // Fix #7: Feature Disabled/Not Implemented status
-                        App.dom.fontCount.textContent = "Feature Disabled";
-
-                        // GPU Info
-                        const canvas = document.createElement('canvas');
-                        const gl = canvas.getContext('webgl');
-                        if (gl) {
-                            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                            if (debugInfo) {
-                                const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-                                App.dom.gpuVal.textContent = renderer;
-                                App.state.fingerprintData.gpu = renderer;
-                                App.updateEntropy(15);
-                            }
-                        }
-
-                        // Battery API
-                        if ('getBattery' in navigator) {
-                            try {
-                                const battery = await navigator.getBattery();
-                                const status = `${Math.round(battery.level * 100)}% ${battery.charging ? 'Charging' : ''}`;
-                                App.dom.batteryVal.textContent = status;
-                                App.dom.batteryVal.classList.add('risk-highlight');
-                                App.log("Battery Status API accessed (Older Browser?)", "warn");
-                                App.state.leaks.battery = true;
-                                App.updateEntropy(5);
-                            } catch(e) {}
-                        }
-
-                        App.state.fingerprintData.hardware = { os, cores: navigator.hardwareConcurrency, res: `${width}x${height}` };
-                    }
-                },
-
-                // 4. Canvas Fingerprinting
-                canvas: {
-                    run: () => {
-                        App.log("Generating Canvas Fingerprint...", "system");
-                        const canvas = App.dom.fingerprintCanvas;
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Draw complex scene to trigger unique GPU rendering
-                        ctx.textBaseline = "top";
-                        ctx.font = "14px 'Arial'";
-                        ctx.textBaseline = "alphabetic";
-                        ctx.fillStyle = "#f60";
-                        ctx.fillRect(125, 1, 62, 20);
-                        ctx.fillStyle = "#069";
-                        ctx.fillText("Privacy", 2, 15);
-                        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-                        ctx.fillText("Check", 4, 45);
-                        
-                        const dataURL = canvas.toDataURL();
-                        const hash = App.utils.cyrb53(dataURL);
-                        
-                        App.dom.canvasHash.textContent = hash;
-                        App.state.fingerprintData.canvasHash = hash;
-                        App.updateEntropy(30);
-                        App.log(`Canvas Hash Generated: ${hash}`, "danger");
-                    }
-                },
-
-                // 5. Audio Context
-                audio: {
-                    run: () => {
-                        try {
-                            const AudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-                            if (!AudioContext) return;
-
-                            const context = new AudioContext(1, 44100, 44100);
-                            const oscillator = context.createOscillator();
-                            oscillator.type = 'triangle';
-                            oscillator.frequency.setValueAtTime(10000, context.currentTime);
-                            
-                            const compressor = context.createDynamicsCompressor();
-                            
-                            oscillator.connect(compressor);
-                            compressor.connect(context.destination);
-                            
-                            oscillator.start(0);
-                            context.startRendering().then((buffer) => {
-                                const hash = App.utils.cyrb53(buffer.getChannelData(0).slice(0, 5000).toString());
-                                App.dom.audioHash.textContent = hash;
-                                App.state.fingerprintData.audioHash = hash;
-                                App.updateEntropy(15);
-                            });
-                        } catch(e) {
-                            App.dom.audioHash.textContent = "Not Supported";
-                        }
-                    }
-                },
-
-                // 6. Behavioral
-                behavior: {
-                    run: () => {
-                        const mouseCanvas = App.dom.mouseMap;
-                        const mCtx = mouseCanvas.getContext('2d');
-                        
-                        setInterval(() => {
-                            const seconds = Math.floor((Date.now() - App.state.startTime) / 1000);
-                            App.dom.timeOnPage.textContent = `${seconds}s`;
-                        }, 1000);
-
-                        document.addEventListener('mousemove', (e) => {
-                            App.dom.mousePos.textContent = `${e.clientX}, ${e.clientY}`;
-                            
-                            // Fix #3: Removed unused variable 'rect'
-                            const x = (e.clientX / window.innerWidth) * mouseCanvas.width;
-                            const y = (e.clientY / window.innerHeight) * mouseCanvas.height;
-                            
-                            mCtx.fillStyle = "rgba(99, 102, 241, 0.5)";
-                            mCtx.beginPath();
-                            mCtx.arc(x, y, 2, 0, Math.PI * 2);
-                            mCtx.fill();
-                        });
-
-                        document.addEventListener('keydown', () => {
-                            App.state.keyCount = (App.state.keyCount || 0) + 1;
-                            App.dom.keyCount.textContent = App.state.keyCount;
-                        });
-                    }
-                }
-            },
-
-            // --- INTELLIGENCE ENGINE ---
-            generateDeepInsights() {
-                const container = this.dom.securityRecommendations;
-                const panel = document.getElementById('securityPanel');
-                container.innerHTML = '';
-                let hasRecs = false;
-
-                const createRec = (level, title, desc, action) => {
-                    hasRecs = true;
-                    return `
-                    <div class="rec-card ${level}">
-                        <div class="rec-title">${level === 'critical' ? 'CRITICAL' : 'WARNING'} : ${title}</div>
-                        <div class="rec-desc">${desc}</div>
-                        <div class="rec-action">${action}</div>
-                    </div>`;
-                };
-
-                // 1. WebRTC Leak Check
-                if (this.state.leaks.webRTC) {
-                    container.innerHTML += createRec('critical', 'WebRTC IP Leak Detected', 
-                        'Your real Local IP is visible through WebRTC, bypassing VPNs.',
-                        'Action: Disable WebRTC in browser (e.g., Firefox `media.peerconnection.enabled = false`) or use uBlock Origin.'
-                    );
-                }
-
-                // 2. High Entropy Check (Fingerprinting)
-                if (this.state.entropy > 100) {
-                    container.innerHTML += createRec('critical', 'Extreme Fingerprinting Risk', 
-                        'Your Canvas/Audio hashes and Font lists create a unique ID. Incognito mode DOES NOT fix this.',
-                        'Action: Use Firefox with `privacy.resistFingerprinting` enabled, or the Tor Browser.'
-                    );
-                }
-
-                // 3. Battery API Check
-                if (this.state.leaks.battery) {
-                    container.innerHTML += createRec('medium', 'Obsolete Privacy API', 
-                        'Your browser supports the Battery Status API, which was deprecated for privacy risks.',
-                        'Action: Update your browser to the latest version immediately.'
-                    );
-                }
-
-                // 4. ISP Visibility
-                const isp = this.dom.ispInfo.textContent;
-                if (isp !== "Unknown" && isp !== "--") {
-                    container.innerHTML += createRec('medium', 'DNS/ISP Visibility', 
-                        `Your ISP (${isp}) can likely see your DNS requests even if you use HTTPS.`,
-                        'Action: Enable "Secure DNS" (DoH) in your browser settings (Settings > Privacy > Use Secure DNS).'
-                    );
-                }
-
-                if (hasRecs) {
-                    panel.style.display = 'flex';
-                    this.log("Security Intelligence Report Generated", "system");
-                }
-            },
-
-            utils: {
-                cyrb53: function(str, seed = 0) {
-                    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-                    for (let i = 0, ch; i < str.length; i++) {
-                        ch = str.charCodeAt(i);
-                        h1 = Math.imul(h1 ^ ch, 2654435761);
-                        h2 = Math.imul(h2 ^ ch, 1597334677);
-                    }
-                    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-                    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-                    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-                }
-            },
-
-            updateEntropy(points) {
-                this.state.entropy += points;
-                const maxEntropy = 180; 
-                const percent = Math.min((this.state.entropy / maxEntropy) * 100, 100);
-                
-                this.dom.entropyScore.textContent = this.state.entropy;
-                this.dom.entropyBar.style.width = `${percent}%`;
-                
-                const bar = this.dom.entropyBar;
-                if (percent < 30) bar.style.background = "var(--accent-success)";
-                else if (percent < 70) bar.style.background = "var(--accent-warning)";
-                else bar.style.background = "var(--accent-danger)";
-
-                const users = Math.floor(Math.pow(2, this.state.entropy / 5));
-                this.dom.uniqueRatio.textContent = users.toLocaleString();
-            },
-
-            initUI() {
-                this.dom.consoleLog.innerHTML = '';
-            },
-
-            log(msg, type = "normal") {
-                const div = document.createElement('div');
-                div.className = `log-entry ${type}`;
-                const time = new Date().toLocaleTimeString('en-US', {hour12: false});
-                div.innerHTML = `<span style="opacity:0.5">[${time}]</span> ${msg}`;
-                this.dom.consoleLog.prepend(div);
-            },
-
-            chart: null,
-            initChart() {
-                // Fix #6: Chart safety check
-                const chartElement = document.getElementById('pingChart');
-                if (!chartElement) return;
-
-                const ctx = chartElement.getContext('2d');
-                if (!ctx) return;
-
-                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.2)');
-                gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
-
-                this.chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: Array(20).fill(''),
-                        datasets: [{
-                            data: Array(20).fill(0),
-                            borderColor: '#6366f1',
-                            backgroundColor: gradient,
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { display: false },
-                            y: { display: true, grid: { color: 'rgba(255,255,255,0.05)' } }
-                        },
-                        animation: { duration: 0 }
-                    }
-                });
-            },
-
-            updateChart(val) {
-                if (!this.chart) return;
-                const data = this.chart.data.datasets[0].data;
-                data.push(val);
-                data.shift();
-                this.chart.update();
+        // Reset
+        this.dom.resetSessionBtn.addEventListener('click', () => {
+            if (confirm('⚠️ Reset session will clear all collected data and reload the page. Continue?')) {
+                sessionStorage.removeItem('panopticon_consent');
+                location.reload();
             }
+        });
+
+        // Camouflage
+        this.dom.camouflageBtn.addEventListener('click', () => {
+            const isActive = document.body.classList.toggle('camouflage-active');
+            this.dom.camouflageBtn.setAttribute('aria-pressed', String(isActive));
+            this.dom.camouflageBtn.innerHTML = isActive
+                ? '<span>⬜</span> Reveal UI'
+                : '<span>⬛</span> Camouflage Mode';
+            // FIX #12: explicit display toggle; color is set in CSS
+            if (this.dom.camoHint) {
+                this.dom.camoHint.style.display = isActive ? 'block' : 'none';
+            }
+            this.log(isActive ? 'Camouflage mode activated — hover panels to reveal' : 'Camouflage mode deactivated', 'warn');
+        });
+
+        // Modal
+        this.dom.infoTrigger.addEventListener('click', () => this.dom.infoModal.classList.add('active'));
+        this.dom.closeModal.addEventListener('click', () => this.dom.infoModal.classList.remove('active'));
+        this.dom.infoModal.addEventListener('click', e => {
+            if (e.target === this.dom.infoModal) this.dom.infoModal.classList.remove('active');
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && this.dom.infoModal.classList.contains('active')) {
+                this.dom.infoModal.classList.remove('active');
+                this.dom.infoTrigger.focus();
+            }
+        });
+
+        // Accordions
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            const toggle = () => {
+                const expanded = header.getAttribute('aria-expanded') === 'true';
+                header.setAttribute('aria-expanded', String(!expanded));
+                const content = document.getElementById(header.getAttribute('aria-controls'));
+                if (content) content.classList.toggle('open', !expanded);
+            };
+            header.addEventListener('click', toggle);
+            header.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+            });
+        });
+
+        // Copy JSON
+        this.dom.copyReportBtn.addEventListener('click', () => {
+            if (confirm('⚠️ The copied JSON contains potentially identifying information (IP, hashes, hardware). Share at your own risk.\n\nContinue?')) {
+                const report = JSON.stringify(this.state.fingerprintData, null, 2);
+                navigator.clipboard.writeText(report).then(() => {
+                    this.dom.copyReportBtn.innerHTML = '✓ Copied!';
+                    setTimeout(() => { this.dom.copyReportBtn.innerHTML = '<span>📋</span> Copy JSON'; }, 2000);
+                }).catch(() => this.log('Clipboard write failed', 'warn'));
+            }
+        });
+
+        // Clear log
+        this.dom.clearLogBtn?.addEventListener('click', () => {
+            if (this.dom.consoleLog) this.dom.consoleLog.innerHTML = '';
+        });
+
+        // Online/Offline
+        window.addEventListener('offline', () => {
+            this.dom.netStatus.className = 'badge badge-red';
+            this.dom.netStatus.innerHTML = '<span class="badge-dot"></span>Offline';
+            this.log('Network connection lost', 'danger');
+        });
+        window.addEventListener('online', () => {
+            this.dom.netStatus.className = 'badge badge-green';
+            this.dom.netStatus.innerHTML = '<span class="badge-dot"></span>Online';
+            this.log('Network connection restored', 'system');
+        });
+    },
+
+    /* ─── UTILS ─────────────────────────────────────────────────── */
+    async sha256(str) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+    },
+
+    resolve(el, value) {
+        if (!el) return;
+        el.classList.remove('skeleton');
+        el.classList.add('resolved');
+        el.textContent = value;
+    },
+
+    /* ─── MODULES ───────────────────────────────────────────────── */
+    modules: {
+
+        identity: {
+            run: async () => {
+                App.log('Querying public identity…', 'system');
+                // FIX #16: this only runs after consent gate
+                const APIs = [
+                    'https://ipapi.co/json/',
+                    'https://ip-api.com/json/?fields=status,query,org,city,countryCode,timezone',
+                ];
+                let data = null;
+                for (const url of APIs) {
+                    try {
+                        const res = await Promise.race([
+                            fetch(url),
+                            new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), 6000))
+                        ]);
+                        if (!res.ok) throw new Error('Non-OK response');
+                        data = await res.json();
+                        // Normalize ip-api.com field differences
+                        if (data.query) { data.ip = data.query; data.country_code = data.countryCode; }
+                        if (data.ip) break;
+                    } catch { /* try next */ }
+                }
+
+                if (!data || !data.ip) {
+                    App.resolve(App.dom.publicIP, 'Blocked / Hidden');
+                    App.resolve(App.dom.ispInfo, 'Unknown');
+                    App.resolve(App.dom.geoLoc, 'Unknown');
+                    App.resolve(App.dom.vpnStatus, 'Indeterminate');
+                    App.dom.identityBadge.className = 'badge badge-green';
+                    App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>Protected';
+                    App.state.fingerprintData.identity = { ip: 'hidden', org: 'unknown', geo: 'unknown' };
+                    return;
+                }
+
+                App.resolve(App.dom.publicIP, data.ip);
+                App.resolve(App.dom.ispInfo, data.org || data.asn || 'Unknown');
+                App.resolve(App.dom.geoLoc, [data.city, data.country_code].filter(Boolean).join(', ') || 'Unknown');
+
+                // Timezone mismatch = likely VPN
+                const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const apiTz   = data.timezone || '';
+                const mismatch = apiTz && !localTz.toLowerCase().includes(apiTz.split('/')[0].toLowerCase());
+
+                if (mismatch) {
+                    App.resolve(App.dom.vpnStatus, 'Likely VPN/Proxy');
+                    App.dom.vpnStatus.classList.add('risk-highlight');
+                    App.dom.identityBadge.className = 'badge badge-yellow';
+                    App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>VPN Detected';
+                } else {
+                    App.resolve(App.dom.vpnStatus, 'Direct Connection');
+                    App.dom.identityBadge.className = 'badge badge-red';
+                    App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>Exposed';
+                }
+
+                App.updateEntropy(50);
+                App.state.fingerprintData.identity = {
+                    ip: data.ip,
+                    org: data.org || 'Unknown',
+                    geo: [data.city, data.country_code].filter(Boolean).join(', '),
+                };
+            }
+        },
+
+        network: {
+            run: () => new Promise(resolve => {
+                // Connection info
+                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (conn) {
+                    App.resolve(App.dom.connType, conn.effectiveType ? conn.effectiveType.toUpperCase() : 'Unknown');
+                    App.resolve(App.dom.downlink, conn.downlink ? `~${conn.downlink} Mbps` : 'Unknown');
+                } else {
+                    App.resolve(App.dom.connType, 'Not Available');
+                    App.resolve(App.dom.downlink, 'Not Available');
+                }
+
+                // FIX #4: guard against multiple ICE callbacks with resolved flag
+                let rtcResolved = false;
+                let pc;
+                try {
+                    pc = new RTCPeerConnection({ iceServers: [] });
+                    pc.createDataChannel('');
+                } catch {
+                    App.resolve(App.dom.localIP, 'Not Available');
+                    App.dom.localIP.classList.remove('skeleton');
+                    startPing();
+                    resolve();
+                    return;
+                }
+
+                const leakTimeout = setTimeout(() => {
+                    if (!rtcResolved) {
+                        App.resolve(App.dom.localIP, 'Not Leaked');
+                        rtcResolved = true;
+                    }
+                    if (pc && pc.signalingState !== 'closed') pc.close();
+                    resolve();
+                }, 5000);
+
+                pc.onicecandidate = e => {
+                    if (rtcResolved || !e.candidate) return;
+                    const ipRegex = /(?:\d{1,3}\.){3}\d{1,3}|[a-f0-9]{1,4}(?::[a-f0-9]{0,4}){2,7}/gi;
+                    const match = ipRegex.exec(e.candidate.candidate);
+                    if (match) {
+                        rtcResolved = true;
+                        const ip = match[0];
+                        App.resolve(App.dom.localIP, ip);
+                        App.dom.localIP.classList.add('risk-highlight');
+                        App.log(`WebRTC leak detected: local IP = ${ip}`, 'danger');
+                        App.state.leaks.webRTC = true;
+                        App.updateEntropy(20);
+                        App.state.fingerprintData.localIP = ip;
+                        clearTimeout(leakTimeout);
+                        if (pc && pc.signalingState !== 'closed') pc.close();
+                        startPing();
+                        resolve();
+                    }
+                };
+
+                // FIX #5: createOffer wrapped in try/catch
+                pc.createOffer()
+                    .then(d => pc.setLocalDescription(d))
+                    .catch(err => {
+                        App.log(`WebRTC offer error: ${err.message}`, 'warn');
+                        App.resolve(App.dom.localIP, 'Error');
+                        rtcResolved = true;
+                        clearTimeout(leakTimeout);
+                        startPing();
+                        resolve();
+                    });
+
+                // FIX #2: Real network latency via Cloudflare trace (no-cors, cache-busted)
+                function startPing() {
+                    App.state._pingInterval = setInterval(() => {
+                        const start = performance.now();
+                        fetch(`https://1.1.1.1/cdn-cgi/trace?_=${Date.now()}`, {
+                            method: 'GET',
+                            mode: 'no-cors',
+                            cache: 'no-store',
+                        }).then(() => {
+                            const rtt = Math.round(performance.now() - start);
+                            App.dom.pingVal.textContent = `${rtt} ms`;
+                            App.state.pingHistory.push(rtt);
+                            if (App.state.pingHistory.length > 20) App.state.pingHistory.shift();
+                            const avg = Math.round(
+                                App.state.pingHistory.reduce((a, b) => a + b, 0) / App.state.pingHistory.length
+                            );
+                            if (App.dom.latencyAvg) App.dom.latencyAvg.textContent = `avg: ${avg} ms`;
+                            App.updateChart(rtt);
+                        }).catch(() => {});
+                    }, 2000);
+                }
+            })
+        },
+
+        hardware: {
+            run: async () => {
+                let osStr = 'Unknown';
+                if (navigator.userAgentData) {
+                    try {
+                        const uaHigh = await navigator.userAgentData.getHighEntropyValues(['platform','platformVersion']);
+                        osStr = `${uaHigh.platform} ${uaHigh.platformVersion}`.trim() || navigator.userAgentData.platform;
+                    } catch {
+                        osStr = navigator.userAgentData.platform || navigator.platform;
+                    }
+                } else {
+                    osStr = navigator.platform || 'Unknown';
+                }
+                App.resolve(App.dom.osVal, osStr);
+                App.resolve(App.dom.cpuVal, `${navigator.hardwareConcurrency || 'Unknown'} logical cores`);
+                App.resolve(App.dom.ramVal, navigator.deviceMemory ? `~${navigator.deviceMemory} GB (bucket)` : 'Protected');
+
+                const { width, height, colorDepth } = window.screen;
+                App.resolve(App.dom.resVal, `${width}×${height} @ ${colorDepth}bit`);
+
+                // User-agent token
+                const ua = navigator.userAgent;
+                if (App.dom.uaToken) {
+                    App.dom.uaToken.textContent = ua.slice(0, 80) + (ua.length > 80 ? '…' : '');
+                    App.dom.uaToken.classList.remove('skeleton');
+                    App.dom.uaToken.classList.add('resolved');
+                }
+
+                // WebGL GPU
+                const glCanvas = document.createElement('canvas');
+                const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+                if (gl) {
+                    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (dbg) {
+                        const renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+                        App.resolve(App.dom.gpuVal, renderer);
+                        App.state.fingerprintData.gpu = renderer;
+                        App.updateEntropy(15);
+                    } else {
+                        App.resolve(App.dom.gpuVal, 'Info Blocked');
+                    }
+                } else {
+                    App.resolve(App.dom.gpuVal, 'WebGL Unavailable');
+                }
+
+                // Battery
+                if ('getBattery' in navigator) {
+                    try {
+                        const battery = await navigator.getBattery();
+                        const status = `${Math.round(battery.level * 100)}% ${battery.charging ? '⚡ Charging' : ''}`.trim();
+                        App.dom.batteryVal.textContent = status;
+                        App.dom.batteryVal.classList.add('risk-highlight');
+                        App.log('Battery Status API exposed (deprecated in most browsers)', 'warn');
+                        App.state.leaks.battery = true;
+                        App.updateEntropy(5);
+                    } catch { /* protected */ }
+                }
+
+                App.state.fingerprintData.hardware = { os: osStr, cores: navigator.hardwareConcurrency, res: `${width}x${height}` };
+            }
+        },
+
+        canvas: {
+            run: async () => {
+                App.log('Generating canvas fingerprint (SHA-256)…', 'system');
+                const hiddenCanvas = App.dom.fingerprintCanvas;
+                hiddenCanvas.width = 300;
+                hiddenCanvas.height = 150;
+                const hCtx = hiddenCanvas.getContext('2d');
+
+                const drawScene = (ctx, w, h) => {
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.textBaseline = 'alphabetic';
+                    ctx.fillStyle = '#f60';
+                    ctx.fillRect(125, 1, 62, 20);
+                    ctx.fillStyle = '#069';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Privacy', 2, 15);
+                    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                    ctx.font = '16px Arial';
+                    ctx.fillText('Panopticon', 4, 45);
+                    const grad = ctx.createLinearGradient(0, 0, w, 0);
+                    grad.addColorStop(0, '#6366f1');
+                    grad.addColorStop(1, '#ec4899');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 60, w, 20);
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = '11px monospace';
+                    ctx.fillText('🕵 Unique GPU render output', 10, 75);
+                };
+
+                drawScene(hCtx, 300, 150);
+                const dataURL = hiddenCanvas.toDataURL();
+                const hash = await App.sha256(dataURL);
+                App.resolve(App.dom.canvasHash, hash);
+                App.state.fingerprintData.canvasHash = hash;
+                App.updateEntropy(30);
+                App.log(`Canvas SHA-256: ${hash}`, 'danger');
+
+                // FIX #1: canvasPreview is now properly cached and used
+                const preview = App.dom.canvasPreview;
+                if (preview) {
+                    const container = preview.parentElement;
+                    const w = container ? container.offsetWidth || 300 : 300;
+                    preview.width  = w;
+                    preview.height = 96;
+                    const pCtx = preview.getContext('2d');
+                    drawScene(pCtx, w, 96);
+                }
+            }
+        },
+
+        audio: {
+            run: () => new Promise(resolve => {
+                try {
+                    const AudioCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+                    if (!AudioCtx) {
+                        App.resolve(App.dom.audioHash, 'Not Supported');
+                        return resolve();
+                    }
+                    const context = new AudioCtx(1, 44100, 44100);
+                    const oscillator = context.createOscillator();
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(10000, context.currentTime);
+                    const compressor = context.createDynamicsCompressor();
+                    oscillator.connect(compressor);
+                    compressor.connect(context.destination);
+                    oscillator.start(0);
+                    context.startRendering().then(async buffer => {
+                        const raw = buffer.getChannelData(0).slice(0, 5000).toString();
+                        const hash = await App.sha256(raw);
+                        App.resolve(App.dom.audioHash, hash);
+                        App.state.fingerprintData.audioHash = hash;
+                        App.updateEntropy(15);
+                        App.log(`Audio SHA-256: ${hash}`, 'danger');
+                        resolve();
+                    }).catch(() => {
+                        App.resolve(App.dom.audioHash, 'Blocked');
+                        resolve();
+                    });
+                } catch {
+                    App.resolve(App.dom.audioHash, 'Not Supported');
+                    resolve();
+                }
+            })
+        },
+
+        behavior: {
+            run: () => new Promise(resolve => {
+                const mouseCanvas = App.dom.mouseMap;
+                let mCtx = mouseCanvas ? mouseCanvas.getContext('2d') : null;
+
+                // FIX #7: ResizeObserver keeps mouseMap pixel-crisp
+                if (mouseCanvas) {
+                    const syncSize = () => {
+                        const w = mouseCanvas.offsetWidth  || 300;
+                        const h = mouseCanvas.offsetHeight || 96;
+                        if (mouseCanvas.width !== w || mouseCanvas.height !== h) {
+                            mouseCanvas.width  = w;
+                            mouseCanvas.height = h;
+                            mCtx = mouseCanvas.getContext('2d');
+                        }
+                    };
+                    syncSize();
+                    try {
+                        new ResizeObserver(syncSize).observe(mouseCanvas);
+                    } catch { /* not available in all browsers */ }
+                }
+
+                // Timer
+                App.state._timerInterval = setInterval(() => {
+                    const s = Math.floor((Date.now() - App.state.startTime) / 1000);
+                    if (App.dom.timeOnPage) {
+                        App.dom.timeOnPage.textContent = s >= 60
+                            ? `${Math.floor(s / 60)}m ${s % 60}s`
+                            : `${s}s`;
+                    }
+                }, 1000);
+
+                // Mouse tracking
+                let lastMove = 0;
+                document.addEventListener('mousemove', e => {
+                    if (App.dom.mousePos) App.dom.mousePos.textContent = `${e.clientX}, ${e.clientY}`;
+                    const now = Date.now();
+                    if (now - lastMove < 50) return;
+                    lastMove = now;
+                    if (mCtx && mouseCanvas) {
+                        const x = (e.clientX / window.innerWidth)  * mouseCanvas.width;
+                        const y = (e.clientY / window.innerHeight) * mouseCanvas.height;
+                        mCtx.fillStyle = 'rgba(99,102,241,0.45)';
+                        mCtx.beginPath();
+                        mCtx.arc(x, y, 2, 0, Math.PI * 2);
+                        mCtx.fill();
+                    }
+                });
+
+                // Keystroke counter
+                document.addEventListener('keydown', () => {
+                    App.state.keyCount++;
+                    if (App.dom.keyCount) App.dom.keyCount.textContent = App.state.keyCount;
+                });
+
+                resolve();
+            })
+        }
+    },
+
+    /* ─── SCAN COMPLETE ────────────────────────────────────────── */
+    scanComplete() {
+        this.dom.scanDot?.classList.add('done');
+        if (this.dom.scanStatusText) this.dom.scanStatusText.textContent = 'Scan Complete';
+        this.log('All diagnostic modules complete', 'system');
+    },
+
+    /* ─── SECURITY ANALYSIS ─────────────────────────────────────── */
+    generateDeepInsights() {
+        const container = this.dom.securityRecommendations;
+        if (!container) return;
+        container.innerHTML = '';
+
+        let count = 0;
+        const rec = (level, icon, title, desc, action, delay = 0) => {
+            count++;
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card ${level}" style="animation-delay:${delay}s">
+                    <div class="rec-title">${icon}
+                        <span class="text-${level === 'critical' ? 'danger' : level === 'medium' ? 'warn' : 'success'}">
+                            ${level.toUpperCase()}
+                        </span> — ${title}
+                    </div>
+                    <div class="rec-desc">${desc}</div>
+                    <div class="rec-action">${action}</div>
+                </div>`);
         };
 
-        document.addEventListener('DOMContentLoaded', () => App.init());
-    </script>
+        if (this.state.leaks.webRTC) {
+            rec('critical', '🔴', 'WebRTC IP Leak Detected',
+                'Your real local IP is exposed via WebRTC ICE candidates, potentially bypassing VPN protections.',
+                'Firefox: about:config → media.peerconnection.enabled = false', 0);
+        }
+
+        // FIX #3: entropy ceiling is 135 (sum of all real module points)
+        const entropyPct = (this.state.entropy / 135) * 100;
+        if (entropyPct >= 85) {
+            rec('critical', '🔴', 'Extreme Fingerprinting Risk',
+                `Your entropy score is ${this.state.entropy}/135 — you are almost certainly unique across all browser users.`,
+                'Use Firefox + privacy.resistFingerprinting = true', 0.08);
+        } else if (entropyPct >= 55) {
+            rec('medium', '🟡', 'Elevated Fingerprinting Risk',
+                `Your entropy score is ${this.state.entropy}/135 — your browser profile is moderately identifying.`,
+                'Install Canvas Blocker or Privacy Badger extension', 0.08);
+        }
+
+        if (this.state.leaks.battery) {
+            rec('medium', '🟡', 'Deprecated Battery Status API Exposed',
+                'Your browser exposes battery level and charging status. This API has been deprecated due to privacy concerns.',
+                'Update to the latest version of your browser', 0.16);
+        }
+
+        // FIX #6: read ISP from fingerprintData, not DOM text
+        const isp = this.state.fingerprintData.identity?.org;
+        if (isp && isp !== 'Unknown') {
+            rec('medium', '🟡', 'DNS / ISP Visibility',
+                `Your ISP (${isp}) can see your DNS requests and browsing activity in plaintext without Secure DNS.`,
+                'Enable DNS-over-HTTPS (DoH) in your browser privacy settings', 0.24);
+        }
+
+        if (count === 0) {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="rec-card info">
+                    <div class="rec-title">✅ No Major Leaks Detected</div>
+                    <div class="rec-desc">Your browser appears well-configured. Note that fingerprinting risk always remains — no browser is fully immune.</div>
+                    <div class="rec-action">Use Firefox + uBlock Origin for best ongoing protection</div>
+                </div>`);
+        }
+
+        // Update badge
+        if (this.dom.securityBadge) {
+            this.dom.securityBadge.className = 'badge badge-blue';
+            this.dom.securityBadge.innerHTML = `<span class="badge-dot"></span>${count} Finding${count !== 1 ? 's' : ''}`;
+        }
+
+        this.log(`Security report generated: ${count} finding(s)`, 'system');
+    },
+
+    /* ─── ENTROPY ───────────────────────────────────────────────── */
+    updateEntropy(points) {
+        // FIX #3: real ceiling is 135 (50+20+15+30+15+5)
+        const MAX_ENTROPY = 135;
+        this.state.entropy = Math.min(this.state.entropy + points, MAX_ENTROPY);
+
+        // FIX #13: animate displayed counter from current value to new target
+        if (this.state._entropyRAF) cancelAnimationFrame(this.state._entropyRAF);
+        const startVal    = this.state.displayedEntropy;
+        const targetVal   = this.state.entropy;
+        const startTime   = performance.now();
+        const duration    = 800;
+
+        const tick = (now) => {
+            const elapsed  = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased    = 1 - Math.pow(1 - progress, 3);
+            const current  = Math.round(startVal + (targetVal - startVal) * eased);
+            this.state.displayedEntropy = current;
+
+            if (this.dom.entropyScore) this.dom.entropyScore.textContent = current;
+
+            const pct = (targetVal / MAX_ENTROPY) * 100;
+            if (this.dom.entropyBar) {
+                this.dom.entropyBar.style.width = `${pct}%`;
+                this.dom.entropyBar.style.background =
+                    pct < 35 ? 'var(--accent-success)' :
+                    pct < 65 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+            }
+            if (this.dom.entropyScore) {
+                this.dom.entropyScore.style.color =
+                    pct < 35 ? 'var(--accent-success)' :
+                    pct < 65 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+            }
+            if (this.dom.scoreTier) {
+                if (pct < 35) {
+                    this.dom.scoreTier.textContent = 'Low Risk';
+                    this.dom.scoreTier.style.cssText = 'background:rgba(16,185,129,0.12);color:var(--accent-success)';
+                } else if (pct < 55) {
+                    this.dom.scoreTier.textContent = 'Moderate Risk';
+                    this.dom.scoreTier.style.cssText = 'background:rgba(245,158,11,0.12);color:var(--accent-warning)';
+                } else if (pct < 80) {
+                    this.dom.scoreTier.textContent = 'High Risk';
+                    this.dom.scoreTier.style.cssText = 'background:rgba(239,68,68,0.12);color:var(--accent-danger)';
+                } else {
+                    this.dom.scoreTier.textContent = 'Extreme Risk';
+                    this.dom.scoreTier.style.cssText = 'background:rgba(239,68,68,0.2);color:var(--accent-danger)';
+                }
+            }
+
+            // Unique user estimate
+            const users = Math.min(Math.floor(Math.pow(2, targetVal / 6)), 1e15);
+            if (this.dom.uniqueRatio) this.dom.uniqueRatio.textContent = users.toLocaleString();
+
+            if (progress < 1) {
+                this.state._entropyRAF = requestAnimationFrame(tick);
+            }
+        };
+        this.state._entropyRAF = requestAnimationFrame(tick);
+    },
+
+    /* ─── LOGGING ───────────────────────────────────────────────── */
+    log(msg, type = 'normal') {
+        if (!this.dom.consoleLog) return;
+        const div = document.createElement('div');
+        div.className = `log-entry ${type}`;
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        div.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+        this.dom.consoleLog.prepend(div);
+
+        // FIX #14: cap log at 50 entries
+        while (this.dom.consoleLog.children.length > 50) {
+            this.dom.consoleLog.lastChild.remove();
+        }
+    },
+
+    /* ─── CHART ─────────────────────────────────────────────────── */
+    chart: null,
+    initChart() {
+        const el = document.getElementById('pingChart');
+        if (!el) return;
+        const ctx = el.getContext('2d');
+        if (!ctx) return;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, 'rgba(99,102,241,0.25)');
+        gradient.addColorStop(1, 'rgba(99,102,241,0)');
+        this.chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(20).fill(''),
+                datasets: [{
+                    data: Array(20).fill(null),
+                    borderColor: '#6366f1',
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.4,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#555f72', font: { size: 10 } }
+                    }
+                },
+                animation: { duration: 200 }
+            }
+        });
+    },
+
+    updateChart(val) {
+        if (!this.chart) return;
+        const d = this.chart.data.datasets[0].data;
+        d.push(val);
+        d.shift();
+        this.chart.update();
+    },
+
+    /* ─── INIT UI ───────────────────────────────────────────────── */
+    initUI() {
+        if (this.dom.consoleLog) this.dom.consoleLog.innerHTML = '';
+        if (this.dom.entropyScore) this.dom.entropyScore.textContent = '0';
+    },
+
+    /* ─── CLEANUP ───────────────────────────────────────────────── */
+    destroy() {
+        if (this.state._pingInterval) clearInterval(this.state._pingInterval);
+        if (this.state._timerInterval) clearInterval(this.state._timerInterval);
+        if (this.state._entropyRAF) cancelAnimationFrame(this.state._entropyRAF);
+        if (this.chart) this.chart.destroy();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+window.addEventListener('beforeunload', () => App.destroy());
+</script>
 </body>
 </html>
