@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Advanced Network & Privacy Analysis Tool – Educational demo of browser fingerprinting">
+    <meta name="description" content="Advanced Network &amp; Privacy Analysis Tool – Educational demo of browser fingerprinting, WebRTC leaks, canvas hashing, and real-world tracking vectors.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://ipapi.co https://ip-api.com; img-src 'self' data:; connect-src 'self' https://ipapi.co https://ip-api.com;">
     <title>Panopticon | Advanced Privacy Diagnostics</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" crossorigin="anonymous" onerror="window._chartFailed=true"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
@@ -31,6 +32,14 @@
             --shimmer-color: rgba(255,255,255,0.04);
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
         body {
@@ -46,39 +55,15 @@
                 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' fill='none'/%3E%3Ccircle cx='30' cy='30' r='0.5' fill='rgba(255,255,255,0.04)'/%3E%3C/svg%3E");
         }
 
-        /* ── CAMOUFLAGE MODE ─────────────────────────────────────────────── */
-        body.camouflage-active {
-            background-color: #080808 !important;
-            background-image: none !important;
-        }
-        body.camouflage-active .panel,
-        body.camouflage-active header {
-            background-color: #080808 !important;
-            border-color: #141414 !important;
-            box-shadow: none !important;
-        }
-        body.camouflage-active h1,
-        body.camouflage-active span,
-        body.camouflage-active div,
-        body.camouflage-active p,
-        body.camouflage-active button {
-            color: #1e1e1e !important;
-            transition: color 0.2s ease;
-        }
+        /* CAMOUFLAGE MODE */
+        body.camouflage-active { background-color: #080808 !important; background-image: none !important; }
+        body.camouflage-active .panel, body.camouflage-active header { background-color: #080808 !important; border-color: #141414 !important; box-shadow: none !important; }
+        body.camouflage-active h1, body.camouflage-active span, body.camouflage-active div, body.camouflage-active p, body.camouflage-active button { color: #1e1e1e !important; transition: color 0.2s ease; }
         body.camouflage-active .badge { background: #111 !important; color: #2a2a2a !important; }
         body.camouflage-active canvas { opacity: 0.05; filter: grayscale(100%); }
         body.camouflage-active .camo-hint { color: #444 !important; font-size: 0.65rem; text-align: center; display: block !important; }
-
-        body.camouflage-active .panel:hover,
-        body.camouflage-active header:hover {
-            background-color: #0f0f12 !important;
-            border-color: #3a3a3a !important;
-            z-index: 10;
-            box-shadow: 0 0 40px rgba(0,0,0,0.9) !important;
-            transform: scale(1.003);
-        }
-        body.camouflage-active .panel:hover *,
-        body.camouflage-active header:hover * { color: var(--text-primary) !important; }
+        body.camouflage-active .panel:hover, body.camouflage-active header:hover { background-color: #0f0f12 !important; border-color: #3a3a3a !important; z-index: 10; box-shadow: 0 0 40px rgba(0,0,0,0.9) !important; transform: scale(1.003); }
+        body.camouflage-active .panel:hover *, body.camouflage-active header:hover * { color: var(--text-primary) !important; }
         body.camouflage-active .panel:hover .data-key { color: var(--text-secondary) !important; }
         body.camouflage-active .panel:hover .panel-label { color: var(--text-tertiary) !important; }
         body.camouflage-active .panel:hover canvas { opacity: 1; filter: grayscale(0%); }
@@ -86,64 +71,19 @@
         body.camouflage-active .panel:hover .badge-yellow { background: rgba(245,158,11,0.15) !important; color: var(--accent-warning) !important; }
         body.camouflage-active .panel:hover .badge-green { background: rgba(16,185,129,0.15) !important; color: var(--accent-success) !important; }
         body.camouflage-active .panel:hover .badge-blue { background: rgba(99,102,241,0.15) !important; color: var(--accent-primary) !important; }
+        body.camouflage-active .panel:focus-within *, body.camouflage-active header:focus-within * { color: var(--text-primary) !important; }
 
-        /* ── LAYOUT ──────────────────────────────────────────────────────── */
-        .layout {
-            width: 100%;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+        /* LAYOUT */
+        .layout { width: 100%; max-width: 1440px; margin: 0 auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
-        /* ── HEADER ──────────────────────────────────────────────────────── */
-        .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-subtle);
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
+        /* HEADER */
+        .header-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); gap: 1rem; flex-wrap: wrap; }
         .header-left { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-        .header-title h1 {
-            font-family: var(--font-display);
-            font-size: 1.6rem;
-            font-weight: 800;
-            letter-spacing: -0.04em;
-            background: linear-gradient(135deg, #f0f2f8 0%, #8892a4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .header-subtitle {
-            font-size: 0.72rem;
-            color: var(--text-tertiary);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-        /* Right side: status row + button row stacked */
-        .header-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.6rem;
-        }
-        .header-status-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .header-actions {
-            display: flex;
-            gap: 0.6rem;
-            align-items: center;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
+        .header-title h1 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.04em; background: linear-gradient(135deg, #f0f2f8 0%, #8892a4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header-subtitle { font-size: 0.72rem; color: var(--text-tertiary); letter-spacing: 0.12em; text-transform: uppercase; }
+        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+        .header-status-row { display: flex; align-items: center; gap: 0.75rem; }
+        .header-actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 
         @media (max-width: 768px) {
             .layout { padding: 1rem; }
@@ -152,26 +92,9 @@
             .header-actions { justify-content: flex-start; }
         }
 
-        .btn-ghost {
-            background: transparent;
-            border: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-            padding: 0.45rem 0.9rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-family: var(--font-display);
-            font-weight: 600;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            text-decoration: none;
-            white-space: nowrap;
-        }
+        .btn-ghost { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-family: var(--font-display); font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; white-space: nowrap; }
         .btn-ghost:hover { background: var(--bg-panel-hover); color: var(--text-primary); border-color: var(--border-active); }
         .btn-ghost:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
-
         .btn-camo { border-color: #2a2a2a; color: #555; }
         .btn-camo:hover { color: #fff; border-color: #666; box-shadow: 0 0 12px rgba(255,255,255,0.06); }
         .btn-primary { background: rgba(99,102,241,0.15); border-color: var(--accent-primary); color: var(--accent-primary); }
@@ -179,48 +102,16 @@
         .btn-warning { border-color: rgba(239,68,68,0.3); color: #f87171; }
         .btn-warning:hover { background: rgba(239,68,68,0.1); border-color: #ef4444; }
 
-        /* ── CONSENT BANNER ─────────────────────────────────────────────── */
-        .consent-banner {
-            position: fixed;
-            bottom: 1rem;
-            left: 1rem;
-            right: 1rem;
-            max-width: 520px;
-            background: #111216;
-            border: 1px solid var(--border-active);
-            border-radius: 14px;
-            padding: 1.1rem 1.3rem;
-            backdrop-filter: blur(12px);
-            z-index: 1100;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            transition: opacity 0.3s;
-        }
+        /* CONSENT BANNER */
+        .consent-banner { position: fixed; bottom: 1rem; left: 1rem; right: 1rem; max-width: 520px; background: #111216; border: 1px solid var(--border-active); border-radius: 14px; padding: 1.1rem 1.3rem; backdrop-filter: blur(12px); z-index: 1100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.5; transition: opacity 0.3s; }
         .consent-banner.hide { display: none; }
         .consent-banner p { color: var(--text-secondary); margin-bottom: 0.2rem; }
-        /* FIX #11: styled inline code in consent banner */
-        .consent-banner code {
-            background: rgba(255,255,255,0.09);
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.82em;
-            color: #a5b4fc;
-            border: 1px solid rgba(99,102,241,0.2);
-        }
-        .consent-banner .consent-note {
-            font-size: 0.72rem;
-            color: var(--text-tertiary);
-            font-style: italic;
-        }
+        .consent-banner code { background: rgba(255,255,255,0.09); padding: 1px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.82em; color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+        .consent-banner .consent-note { font-size: 0.72rem; color: var(--text-tertiary); font-style: italic; }
         .consent-buttons { display: flex; gap: 0.75rem; justify-content: flex-end; }
         .btn-small { padding: 0.3rem 0.9rem; font-size: 0.75rem; }
 
-        /* ── GRID ────────────────────────────────────────────────────────── */
+        /* GRID */
         .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem; }
         .col-3 { grid-column: span 3; }
         .col-4 { grid-column: span 4; }
@@ -228,127 +119,41 @@
         .col-8 { grid-column: span 8; }
         .col-9 { grid-column: span 9; }
         .col-12 { grid-column: span 12; }
+        @media (max-width: 1100px) { .col-3 { grid-column: span 6; } .col-4 { grid-column: span 6; } }
+        @media (max-width: 768px) { .col-3, .col-4, .col-6, .col-8, .col-9 { grid-column: span 12; } .grid { gap: 0.875rem; } }
 
-        @media (max-width: 1100px) {
-            .col-3 { grid-column: span 6; }
-            .col-4 { grid-column: span 6; }
-        }
-        @media (max-width: 768px) {
-            .col-3, .col-4, .col-6, .col-8, .col-9 { grid-column: span 12; }
-            .grid { gap: 0.875rem; }
-        }
-
-        /* ── PANELS ──────────────────────────────────────────────────────── */
-        .panel {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
-            border-radius: 14px;
-            padding: 1.4rem;
-            position: relative;
-            transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .panel::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 60%);
-            pointer-events: none;
-            border-radius: inherit;
-        }
+        /* PANELS */
+        .panel { background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 1.4rem; position: relative; transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s; display: flex; flex-direction: column; overflow: hidden; }
+        .panel::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 60%); pointer-events: none; border-radius: inherit; }
         .panel:hover { border-color: var(--border-active); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
         .panel.danger-glow { box-shadow: 0 0 24px rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.22); }
         .panel.success-glow { box-shadow: 0 0 24px rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.22); }
         .panel.primary-glow { box-shadow: 0 0 24px rgba(99,102,241,0.07); border-color: rgba(99,102,241,0.3); }
-
-        /* FIX #10: latency panel min-height */
         .panel.latency-panel { min-height: 260px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; }
+        .panel-label { font-size: 0.7rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.12em; display: flex; align-items: center; gap: 7px; }
 
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.1rem;
-        }
-        .panel-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        /* ── SHIMMER SKELETON ────────────────────────────────────────────── */
-        @keyframes shimmer {
-            0% { background-position: -400px 0; }
-            100% { background-position: 400px 0; }
-        }
-        .skeleton {
-            background: linear-gradient(90deg, var(--border-subtle) 25%, var(--shimmer-color) 50%, var(--border-subtle) 75%);
-            background-size: 800px 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-            display: inline-block;
-            color: transparent !important;
-            pointer-events: none;
-            min-width: 80px;
-            height: 1em;
-            vertical-align: middle;
-        }
+        /* SHIMMER */
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+        .skeleton { background: linear-gradient(90deg, var(--border-subtle) 25%, var(--shimmer-color) 50%, var(--border-subtle) 75%); background-size: 800px 100%; animation: shimmer 1.5s infinite; border-radius: 4px; display: inline-block; color: transparent !important; pointer-events: none; min-width: 80px; height: 1em; vertical-align: middle; }
         .skeleton.resolved { animation: none; background: none; color: inherit !important; min-width: unset; height: unset; }
 
-        /* ── DATA ROWS ───────────────────────────────────────────────────── */
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.65rem 0;
-            border-bottom: 1px solid var(--border-subtle);
-            gap: 1rem;
-        }
+        /* DATA ROWS */
+        .data-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); gap: 0.5rem; }
         .data-row:last-child { border-bottom: none; }
-        .data-key {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-        .data-val {
-            font-size: 0.8rem;
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            text-align: right;
-            word-break: break-all;
-        }
-        .mono-highlight {
-            background: rgba(99,102,241,0.1);
-            padding: 2px 7px;
-            border-radius: 4px;
-            color: #a5b4fc;
-            border: 1px solid rgba(99,102,241,0.2);
-        }
+        .data-key { font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; flex-shrink: 0; max-width: 50%; }
+        .data-val { font-size: 0.78rem; color: var(--text-primary); font-family: var(--font-mono); text-align: right; word-break: break-all; flex: 1; }
+        .mono-highlight { background: rgba(99,102,241,0.1); padding: 2px 7px; border-radius: 4px; color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
         .risk-highlight { color: var(--accent-danger) !important; }
 
-        /* ── BADGES ──────────────────────────────────────────────────────── */
-        .badge {
-            padding: 3px 9px;
-            border-radius: 100px;
-            font-size: 0.67rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            white-space: nowrap;
-        }
+        /* TOOLTIPS */
+        .tip { position: relative; display: inline-flex; align-items: center; gap: 3px; cursor: help; }
+        .tip-icon { font-size: 0.62rem; color: var(--text-tertiary); opacity: 0.6; user-select: none; }
+        .tip-box { display: none; position: absolute; bottom: calc(100% + 6px); left: 0; background: #1a1a22; border: 1px solid var(--border-active); border-radius: 8px; padding: 0.55rem 0.75rem; font-size: 0.7rem; line-height: 1.5; color: var(--text-secondary); width: 210px; z-index: 300; box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; font-family: var(--font-display); white-space: normal; }
+        .tip:hover .tip-box, .tip:focus .tip-box { display: block; }
+
+        /* BADGES */
+        .badge { padding: 3px 9px; border-radius: 100px; font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
         .badge-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
         .badge-red { background: rgba(239,68,68,0.12); color: var(--accent-danger); }
         .badge-red .badge-dot { background: var(--accent-danger); }
@@ -359,228 +164,89 @@
         .badge-blue { background: rgba(99,102,241,0.12); color: var(--accent-primary); }
         .badge-blue .badge-dot { background: var(--accent-primary); }
 
-        /* ── SCORE / ENTROPY ─────────────────────────────────────────────── */
+        /* SCORE */
         .score-container { text-align: center; padding: 0.75rem; }
-        .score-val {
-            font-size: 3.8rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            line-height: 1;
-            font-family: var(--font-display);
-            letter-spacing: -0.04em;
-            transition: color 0.5s;
-        }
+        .score-val { font-size: 3.8rem; font-weight: 800; color: var(--text-primary); line-height: 1; font-family: var(--font-display); letter-spacing: -0.04em; transition: color 0.5s; }
         .score-label { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 0.1em; }
         .score-context { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.75rem; }
-        .score-tier {
-            display: inline-block;
-            margin-top: 0.5rem;
-            padding: 2px 10px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
+        .score-note { font-size: 0.62rem; color: var(--text-tertiary); margin-top: 0.25rem; font-style: italic; }
+        .score-tier { display: inline-block; margin-top: 0.5rem; padding: 2px 10px; border-radius: 100px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
         .bar-container { height: 5px; background: var(--border-subtle); border-radius: 3px; width: 100%; margin-top: 12px; overflow: hidden; }
         .bar-fill { height: 100%; width: 0%; transition: width 1.2s var(--ease-premium), background 0.5s; border-radius: 3px; }
 
-        /* ── CANVAS VISUALIZERS ──────────────────────────────────────────── */
-        .canvas-container {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 0.875rem;
-            height: 100px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .canvas-label {
-            position: absolute;
-            top: 6px; left: 8px;
-            font-size: 0.58rem;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
+        /* CANVAS CONTAINERS */
+        .canvas-container { background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; margin-top: 0.875rem; height: 100px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .canvas-label { position: absolute; top: 6px; left: 8px; font-size: 0.58rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; }
 
-        /* ── CONSOLE ─────────────────────────────────────────────────────── */
-        .console-output {
-            height: 140px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 0.73rem;
-            color: var(--text-secondary);
-            padding: 0.25rem 0;
-        }
+        /* CONSOLE */
+        .console-output { height: 140px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.73rem; color: var(--text-secondary); padding: 0.25rem 0; }
         .log-entry { margin-bottom: 3px; border-left: 2px solid transparent; padding-left: 8px; line-height: 1.5; }
         .log-entry.warn { border-left-color: var(--accent-warning); color: #fbbf24; }
         .log-entry.danger { border-left-color: var(--accent-danger); color: #f87171; }
         .log-entry.system { border-left-color: var(--accent-primary); color: #818cf8; }
         .log-entry .log-time { opacity: 0.4; margin-right: 4px; }
 
-        /* ── RECOMMENDATIONS ─────────────────────────────────────────────── */
-        .rec-card {
-            background: rgba(255,255,255,0.018);
-            border-left: 3px solid var(--accent-primary);
-            padding: 1rem 1.1rem;
-            margin-bottom: 0.75rem;
-            border-radius: 0 8px 8px 0;
-            animation: fadeIn 0.4s ease both;
-        }
+        /* RECOMMENDATIONS */
+        .rec-card { background: rgba(255,255,255,0.018); border-left: 3px solid var(--accent-primary); padding: 1rem 1.1rem; margin-bottom: 0.75rem; border-radius: 0 8px 8px 0; animation: fadeIn 0.4s ease both; }
         .rec-card:last-child { margin-bottom: 0; }
         .rec-card.critical { border-left-color: var(--accent-danger); }
         .rec-card.medium { border-left-color: var(--accent-warning); }
         .rec-card.info { border-left-color: var(--accent-primary); }
-        .rec-title {
-            font-weight: 700;
-            font-size: 0.88rem;
-            margin-bottom: 0.35rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .rec-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 8px; }
         .rec-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
-        .rec-action {
-            margin-top: 0.7rem;
-            font-size: 0.72rem;
-            font-family: var(--font-mono);
-            background: rgba(0,0,0,0.35);
-            padding: 5px 9px;
-            border-radius: 5px;
-            color: var(--text-primary);
-            display: inline-block;
-            border: 1px solid var(--border-subtle);
-        }
+        .rec-action { margin-top: 0.7rem; font-size: 0.72rem; font-family: var(--font-mono); background: rgba(0,0,0,0.35); padding: 5px 9px; border-radius: 5px; color: var(--text-primary); display: inline-block; border: 1px solid var(--border-subtle); }
 
-        /* FIX #15: security panel skeleton loading state */
-        .security-skeleton {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        .security-skeleton-item {
-            height: 80px;
-            background: linear-gradient(90deg, var(--border-subtle) 25%, var(--shimmer-color) 50%, var(--border-subtle) 75%);
-            background-size: 800px 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-            border-left: 3px solid rgba(99,102,241,0.2);
-        }
+        .security-skeleton { display: flex; flex-direction: column; gap: 0.75rem; }
+        .security-skeleton-item { height: 80px; background: linear-gradient(90deg, var(--border-subtle) 25%, var(--shimmer-color) 50%, var(--border-subtle) 75%); background-size: 800px 100%; animation: shimmer 1.5s infinite; border-radius: 8px; border-left: 3px solid rgba(99,102,241,0.2); }
 
-        /* ── MODAL ───────────────────────────────────────────────────────── */
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.25s;
-        }
+        /* STABILITY BANNER */
+        .stability-banner { background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(236,72,153,0.08) 100%); border: 1px solid rgba(99,102,241,0.35); border-radius: 10px; padding: 0.9rem 1.2rem; font-size: 0.83rem; display: none; gap: 0.5rem; flex-direction: column; }
+        .stability-banner.visible { display: flex; }
+        .stability-banner strong { color: var(--accent-primary); }
+
+        /* MODAL */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.25s; }
         .modal-backdrop.active { display: flex; opacity: 1; }
-        .modal-content {
-            background: #0f0f12;
-            width: 90%;
-            max-width: 820px;
-            max-height: 90vh;
-            border: 1px solid var(--border-subtle);
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 32px 64px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
-            animation: modalIn 0.25s var(--ease-premium);
-        }
+        .modal-content { background: #0f0f12; width: 90%; max-width: 820px; max-height: 90vh; border: 1px solid var(--border-subtle); border-radius: 16px; display: flex; flex-direction: column; box-shadow: 0 32px 64px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04); animation: modalIn 0.25s var(--ease-premium); }
         @keyframes modalIn { from { transform: scale(0.96) translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
-        .modal-header {
-            padding: 1.4rem 1.8rem;
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .modal-header { padding: 1.4rem 1.8rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
         .modal-header h3 { font-size: 1.1rem; font-weight: 700; }
         .modal-body { padding: 1.8rem; overflow-y: auto; }
 
         .accordion-item { border: 1px solid var(--border-subtle); border-radius: 10px; margin-bottom: 0.875rem; overflow: hidden; }
-        .accordion-header {
-            padding: 1rem 1.2rem;
-            background: rgba(255,255,255,0.02);
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-            user-select: none;
-        }
+        .accordion-header { padding: 1rem 1.2rem; background: rgba(255,255,255,0.02); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; user-select: none; }
         .accordion-header:hover { background: rgba(255,255,255,0.045); }
-        .accordion-chevron {
-            width: 8px; height: 8px;
-            border-right: 2px solid currentColor;
-            border-bottom: 2px solid currentColor;
-            transform: rotate(45deg);
-            transition: transform 0.2s;
-            color: var(--text-tertiary);
-            flex-shrink: 0;
-        }
+        .accordion-chevron { width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 0.2s; color: var(--text-tertiary); flex-shrink: 0; }
         .accordion-header[aria-expanded="true"] .accordion-chevron { transform: rotate(-135deg); }
-        .accordion-content {
-            padding: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s var(--ease-premium), padding 0.3s;
-            background: #08080a;
-            border-top: 0px solid var(--border-subtle);
-        }
-        .accordion-content.open { max-height: 400px; padding: 1.4rem 1.2rem; border-top-width: 1px; }
+        .accordion-content { padding: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s var(--ease-premium), padding 0.3s; background: #08080a; border-top: 0px solid var(--border-subtle); }
+        .accordion-content.open { max-height: 500px; padding: 1.4rem 1.2rem; border-top-width: 1px; }
         .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         @media (max-width: 600px) { .impact-grid { grid-template-columns: 1fr; } }
         .impact-box { padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.02); }
         .impact-title { font-size: 0.68rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.4rem; letter-spacing: 0.1em; }
 
-        /* ── CAMO HINT ───────────────────────────────────────────────────── */
-        /* FIX #12: explicit visible color for camo hint */
+        /* MISC */
         .camo-hint { display: none; color: #555 !important; font-size: 0.65rem; }
-
-        /* ── SCAN STATUS INDICATOR ───────────────────────────────────────── */
         .scan-status { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-tertiary); }
-        .scan-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--accent-success);
-            animation: pulse 1.5s ease-in-out infinite;
-        }
+        .scan-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-success); animation: pulse 1.5s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
         .scan-dot.done { animation: none; background: var(--text-tertiary); }
-
-        /* ── MISC ────────────────────────────────────────────────────────── */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
-
-        .divider { border: none; border-top: 1px solid var(--border-subtle); margin: 1rem 0; }
         .text-danger { color: var(--accent-danger); }
         .text-warn { color: var(--accent-warning); }
         .text-success { color: var(--accent-success); }
+        #fontProbeCanvas { position: absolute; left: -9999px; top: -9999px; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<!-- CONSENT BANNER (GDPR/CCPA compliant) -->
-<div id="consentBanner" class="consent-banner" role="dialog" aria-labelledby="consentTitle" aria-modal="true">
-    <p><strong id="consentTitle">🔍 Privacy Demonstration</strong> — Panopticon collects <strong>no server-side data</strong>. All diagnostics run locally in your browser to show what information any website can gather passively (IP, hardware, canvas hash, etc.).</p>
-    <p>We use third-party IP geolocation APIs (<code>ipapi.co</code>, <code>ip-api.com</code>) — their privacy policies apply. No data is sold or stored by us.</p>
-    <!-- FIX #17: inform users consent is tab-scoped -->
+<!-- CONSENT BANNER -->
+<div id="consentBanner" class="consent-banner" role="dialog" aria-labelledby="consentTitle" aria-describedby="consentDesc">
+    <p><strong id="consentTitle">🔍 Privacy Demonstration</strong> — Panopticon collects <strong>no server-side data</strong>. All diagnostics run locally in your browser to show what information any website can gather passively.</p>
+    <p id="consentDesc">We use third-party IP APIs (<code>ipapi.co</code>, <code>ip-api.com</code>) — their privacy policies apply. No data is sold or stored by us.</p>
     <p class="consent-note">Note: consent is remembered for this tab session only and resets when you open a new tab.</p>
     <div class="consent-buttons">
         <button id="declineConsentBtn" class="btn-ghost btn-small">Leave / Decline</button>
@@ -590,7 +256,6 @@
 
 <div class="layout">
 
-    <!-- HEADER -->
     <header class="header-bar">
         <div class="header-left header-title">
             <h1>Panopticon</h1>
@@ -599,28 +264,22 @@
         <div class="header-right">
             <div class="header-status-row">
                 <div class="scan-status">
-                    <!-- FIX #8: aria-live for dynamic scan status -->
                     <div class="scan-dot" id="scanDot"></div>
                     <span id="scanStatusText" aria-live="polite" aria-atomic="true">Waiting for consent...</span>
                 </div>
                 <span class="camo-hint" id="camoHint">Hover any panel to reveal</span>
             </div>
             <div class="header-actions">
-                <button class="btn-ghost btn-camo" id="camouflageBtn" aria-pressed="false">
-                    <span>⬛</span> Camouflage Mode
-                </button>
-                <button class="btn-ghost" id="copyReportBtn">
-                    <span>📋</span> Copy JSON
-                </button>
-                <button class="btn-ghost btn-warning" id="resetSessionBtn">
-                    <span>⟳</span> Reset Session
-                </button>
-                <button class="btn-ghost btn-primary" id="infoTrigger" aria-haspopup="dialog">
-                    System Overview →
-                </button>
+                <button class="btn-ghost btn-camo" id="camouflageBtn" aria-pressed="false"><span>⬛</span> Camouflage Mode</button>
+                <button class="btn-ghost" id="copyReportBtn"><span>📋</span> Copy JSON</button>
+                <button class="btn-ghost btn-warning" id="resetSessionBtn"><span>⟳</span> Reset Session</button>
+                <button class="btn-ghost btn-primary" id="infoTrigger" aria-haspopup="dialog">System Overview →</button>
             </div>
         </div>
     </header>
+
+    <!-- FINGERPRINT STABILITY BANNER -->
+    <div class="stability-banner" id="stabilityBanner" role="status" aria-live="polite"></div>
 
     <div class="grid">
 
@@ -630,22 +289,11 @@
                 <span class="panel-label">⚠ Public Identity</span>
                 <div class="badge badge-red" id="identityBadge"><span class="badge-dot"></span>Scanning</div>
             </div>
-            <div class="data-row">
-                <span class="data-key">Public IP</span>
-                <span class="data-val skeleton" id="publicIP">Scanning...</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">ISP / Org</span>
-                <span class="data-val skeleton" id="ispInfo">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Location</span>
-                <span class="data-val skeleton" id="geoLoc">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">VPN/Proxy</span>
-                <span class="data-val skeleton" id="vpnStatus">Checking...</span>
-            </div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Public IP<span class="tip-icon">ⓘ</span><span class="tip-box">Your public-facing IP — sent with every HTTP request. Reveals ISP, country, and often city to any website you visit.</span></span></span><span class="data-val skeleton" id="publicIP">Scanning...</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">ISP / Org<span class="tip-icon">ⓘ</span><span class="tip-box">Your Internet Service Provider. Used for ad targeting by carrier and can be correlated with billing records by law enforcement.</span></span></span><span class="data-val skeleton" id="ispInfo">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Location<span class="tip-icon">ⓘ</span><span class="tip-box">City/country inferred from your IP. Accurate to city-level for most IPs — sometimes pinpoints a neighborhood.</span></span></span><span class="data-val skeleton" id="geoLoc">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Timezone<span class="tip-icon">ⓘ</span><span class="tip-box">Your local IANA timezone from Intl API. Used in VPN detection — a mismatch with your IP location signals a VPN.</span></span></span><span class="data-val" id="timezoneVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">VPN/Proxy<span class="tip-icon">ⓘ</span><span class="tip-box">Detected by comparing your browser timezone against the one inferred from your IP. A mismatch = likely VPN or proxy.</span></span></span><span class="data-val skeleton" id="vpnStatus">Checking...</span></div>
         </div>
 
         <!-- NETWORK DIAGNOSTICS -->
@@ -654,22 +302,11 @@
                 <span class="panel-label">⚡ Network Diagnostics</span>
                 <div class="badge badge-green" id="netStatus"><span class="badge-dot"></span>Online</div>
             </div>
-            <div class="data-row">
-                <span class="data-key">WebRTC Local IP</span>
-                <span class="data-val skeleton" id="localIP">Probing...</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Latency (RTT)</span>
-                <span class="data-val" id="pingVal">-- ms</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Connection Type</span>
-                <span class="data-val skeleton" id="connType">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Downlink Est.</span>
-                <span class="data-val skeleton" id="downlink">-- Mbps</span>
-            </div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">WebRTC Local IP<span class="tip-icon">ⓘ</span><span class="tip-box">WebRTC can expose your LAN IP even behind a VPN via ICE candidate harvesting — a well-known browser privacy leak.</span></span></span><span class="data-val skeleton" id="localIP">Probing...</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Latency (RTT)<span class="tip-icon">ⓘ</span><span class="tip-box">Round-trip time measured by loading a tiny resource. Indicates your connection quality and can reveal geographic distance to servers.</span></span></span><span class="data-val" id="pingVal">-- ms</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Connection Type<span class="tip-icon">ⓘ</span><span class="tip-box">Effective connection type (4G, WiFi, etc.) — helps infer device class and mobility. API may return undefined in some browsers.</span></span></span><span class="data-val skeleton" id="connType">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Downlink Est.<span class="tip-icon">ⓘ</span><span class="tip-box">Estimated download bandwidth from the Network Info API. Bucketed for privacy but still leaks device class.</span></span></span><span class="data-val skeleton" id="downlink">-- Mbps</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Media Devices<span class="tip-icon">ⓘ</span><span class="tip-box">Count of microphones, cameras, and speakers. Labels are hidden without permission, but device counts leak device class information.</span></span></span><span class="data-val skeleton" id="mediaDevices">--</span></div>
         </div>
 
         <!-- UNIQUENESS SCORE -->
@@ -680,82 +317,97 @@
             <div class="score-container">
                 <div class="score-val" id="entropyScore">0</div>
                 <div class="score-label">Entropy Points</div>
-                <div class="bar-container">
-                    <div class="bar-fill" id="entropyBar"></div>
-                </div>
-                <p class="score-context">
-                    Unique among ~<strong id="uniqueRatio">1</strong> users
-                </p>
+                <div class="bar-container"><div class="bar-fill" id="entropyBar"></div></div>
+                <p class="score-context">Illustrative 1-in-~<strong id="uniqueRatio">1</strong> users</p>
+                <p class="score-note">Educational estimate — not measured vs. real population</p>
                 <span class="score-tier" id="scoreTier" style="background: rgba(16,185,129,0.12); color: var(--accent-success);">Low Risk</span>
             </div>
         </div>
 
         <!-- HARDWARE PROFILE -->
-        <div class="panel col-6">
+        <div class="panel col-4">
             <div class="panel-header">
                 <span class="panel-label">🖥 Hardware Profile</span>
                 <div class="badge badge-yellow"><span class="badge-dot"></span>Moderate Risk</div>
             </div>
-            <div class="data-row">
-                <span class="data-key">OS / Platform</span>
-                <span class="data-val skeleton" id="osVal">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">CPU Cores</span>
-                <span class="data-val skeleton" id="cpuVal">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">RAM (Est.)</span>
-                <span class="data-val skeleton" id="ramVal">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Screen Resolution</span>
-                <span class="data-val skeleton" id="resVal">--</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Battery Status</span>
-                <span class="data-val" id="batteryVal">Protected</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">GPU Renderer</span>
-                <span class="data-val skeleton" id="gpuVal" style="font-size: 0.68rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</span>
-            </div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">OS / Platform<span class="tip-icon">ⓘ</span><span class="tip-box">Operating system and version. Narrows fingerprint significantly — most users cluster on a few OS+version combos.</span></span></span><span class="data-val skeleton" id="osVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">CPU Cores<span class="tip-icon">ⓘ</span><span class="tip-box">Logical CPU core count. Distinguishes mobile/laptop/desktop and high-performance workstations used for re-identification.</span></span></span><span class="data-val skeleton" id="cpuVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">RAM (Est.)<span class="tip-icon">ⓘ</span><span class="tip-box">Device memory in bucketed GB. Exact value is hidden but bucket (0.25–8 GB) still reveals device class.</span></span></span><span class="data-val skeleton" id="ramVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Device Pixel Ratio<span class="tip-icon">ⓘ</span><span class="tip-box">DPR distinguishes Retina/HiDPI displays (2×, 3×) from standard displays. Combined with resolution, very identifying.</span></span></span><span class="data-val" id="dprVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Touch Points<span class="tip-icon">ⓘ</span><span class="tip-box">Max simultaneous touch points. 0=desktop, 5/10=touch device. Distinguishes device class for fingerprinters.</span></span></span><span class="data-val" id="touchVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Battery Status<span class="tip-icon">ⓘ</span><span class="tip-box">Battery level and charging state — deprecated due to fingerprinting abuse but still available in some browsers.</span></span></span><span class="data-val" id="batteryVal">Protected</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Storage Quota<span class="tip-icon">ⓘ</span><span class="tip-box">navigator.storage.estimate() reveals device storage class — distinguishes budget phones from high-end machines.</span></span></span><span class="data-val skeleton" id="storageVal">--</span></div>
         </div>
 
-        <!-- CANVAS & AUDIO FINGERPRINT -->
-        <div class="panel col-6">
+        <!-- CANVAS & BROWSER FINGERPRINT -->
+        <div class="panel col-4">
             <div class="panel-header">
-                <span class="panel-label">🔑 Canvas & Audio Fingerprint</span>
+                <span class="panel-label">🔑 Canvas &amp; Browser FP</span>
                 <div class="badge badge-red"><span class="badge-dot"></span>High Risk</div>
             </div>
-            <div class="data-row">
-                <span class="data-key">Canvas Hash (SHA-256)</span>
-                <span class="data-val mono-highlight skeleton" id="canvasHash">Generating...</span>
-            </div>
-            <!-- Hidden canvas for actual fingerprinting (off-screen) -->
-            <canvas id="fingerprintCanvas" width="300" height="150"
-                style="position:absolute; left:-9999px; top:-9999px; opacity:0; pointer-events:none;"
-                aria-hidden="true"></canvas>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Canvas Hash<span class="tip-icon">ⓘ</span><span class="tip-box">Unique GPU+driver rendering hash. Persists across incognito tabs, cookie clears, and VPNs. Displayed truncated.</span></span></span><span class="data-val mono-highlight skeleton" id="canvasHash">Generating...</span></div>
+            <canvas id="fingerprintCanvas" width="300" height="150" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true"></canvas>
+            <canvas id="fontProbeCanvas" width="200" height="30" aria-hidden="true"></canvas>
             <div class="canvas-container">
                 <span class="canvas-label">Canvas Render Preview</span>
-                <!-- FIX #1: canvasPreview properly declared in HTML so cacheDOM can find it -->
                 <canvas id="canvasPreview" height="96" width="300"></canvas>
             </div>
-            <div class="data-row" style="margin-top: 0.875rem;">
-                <span class="data-key">Audio Context Hash</span>
-                <span class="data-val mono-highlight skeleton" id="audioHash">Generating...</span>
+            <div class="data-row" style="margin-top:0.875rem"><span class="data-key"><span class="tip" tabindex="0">Audio Hash<span class="tip-icon">ⓘ</span><span class="tip-box">Unique audio signal processing fingerprint from oscillator+compressor — hardware-specific and very stable. Truncated.</span></span></span><span class="data-val mono-highlight skeleton" id="audioHash">Generating...</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">GPU Renderer<span class="tip-icon">ⓘ</span><span class="tip-box">Unmasked GPU renderer string — reveals exact GPU model and driver version. High entropy for rare GPUs.</span></span></span><span class="data-val skeleton" id="gpuVal" style="font-size:0.68rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">GPU Vendor<span class="tip-icon">ⓘ</span><span class="tip-box">Unmasked GPU vendor (NVIDIA, AMD, Intel, Apple). Collected alongside renderer by all major tracker SDKs.</span></span></span><span class="data-val skeleton" id="gpuVendorVal" style="font-size:0.68rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">User Agent<span class="tip-icon">ⓘ</span><span class="tip-box">Sent with every HTTP request. Reveals browser name, version, OS, and rendering engine without any JS needed.</span></span></span><span class="data-val mono-highlight skeleton" id="uaToken" style="font-size:0.65rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">--</span></div>
+        </div>
+
+        <!-- ADVANCED SIGNALS -->
+        <div class="panel col-4">
+            <div class="panel-header">
+                <span class="panel-label">🧬 Advanced Signals</span>
+                <div class="badge badge-red"><span class="badge-dot"></span>Tracking Vectors</div>
             </div>
-            <div class="data-row">
-                <span class="data-key">User Agent Token</span>
-                <span class="data-val mono-highlight skeleton" id="uaToken" style="font-size:0.65rem; max-width: 200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">--</span>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Languages<span class="tip-icon">ⓘ</span><span class="tip-box">navigator.languages ordered list (e.g. en-US, hi, fr) is highly identifying — reveals cultural background and multi-language setup.</span></span></span><span class="data-val" id="langVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Do Not Track<span class="tip-icon">ⓘ</span><span class="tip-box">Ironic: trackers collect your DNT preference to fingerprint you even if set to 1. Legally ignored by most ad networks.</span></span></span><span class="data-val" id="dntVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Global Privacy Control<span class="tip-icon">ⓘ</span><span class="tip-box">navigator.globalPrivacyControl — legally binding in CA/CO. The setting itself is also a fingerprinting signal.</span></span></span><span class="data-val" id="gpcVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Color Scheme<span class="tip-icon">ⓘ</span><span class="tip-box">prefers-color-scheme CSS media query. Dark/light mode preference is a minor fingerprinting signal collected by analytics.</span></span></span><span class="data-val" id="colorSchemeVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Reduced Motion<span class="tip-icon">ⓘ</span><span class="tip-box">prefers-reduced-motion — accessibility setting that leaks OS configuration information to any website.</span></span></span><span class="data-val" id="reducedMotionVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Plugins Count<span class="tip-icon">ⓘ</span><span class="tip-box">navigator.plugins — deprecated but browsers still expose the count. Zero plugins = possible headless browser signal.</span></span></span><span class="data-val" id="pluginsVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Installed Fonts<span class="tip-icon">ⓘ</span><span class="tip-box">Font enumeration via canvas measurement — highest entropy signal after canvas itself. Fonts reveal OS, locale, and installed apps.</span></span></span><span class="data-val skeleton" id="fontsVal">Probing...</span></div>
+        </div>
+
+        <!-- WEBGL DEEP SCAN -->
+        <div class="panel col-6">
+            <div class="panel-header">
+                <span class="panel-label">📊 WebGL Deep Scan</span>
+                <div class="badge badge-red"><span class="badge-dot"></span>High Entropy</div>
+            </div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Max Texture Size<span class="tip-icon">ⓘ</span><span class="tip-box">gl.MAX_TEXTURE_SIZE reveals GPU capability class — varies significantly across device generations and GPU families.</span></span></span><span class="data-val skeleton" id="glMaxTexture">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Shader Precision<span class="tip-icon">ⓘ</span><span class="tip-box">Fragment shader float precision format — differs across GPU vendors and driver versions, contributes to GPU fingerprint.</span></span></span><span class="data-val skeleton" id="glShaderPrec">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Max Viewport<span class="tip-icon">ⓘ</span><span class="tip-box">MAX_VIEWPORT_DIMS — maximum canvas dimensions the GPU supports. Varies by GPU model and is GPU-class identifying.</span></span></span><span class="data-val skeleton" id="glMaxViewport">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">WebGL Extensions<span class="tip-icon">ⓘ</span><span class="tip-box">Supported extension count and set — varies by GPU/driver. The specific combination is highly identifying across devices.</span></span></span><span class="data-val skeleton" id="glExtensions">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Screen Resolution<span class="tip-icon">ⓘ</span><span class="tip-box">Full screen vs available area — the gap reveals your OS taskbar height, which is unique per display setup.</span></span></span><span class="data-val skeleton" id="resVal">--</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Antialiasing<span class="tip-icon">ⓘ</span><span class="tip-box">Whether hardware antialiasing is supported — another GPU capability signal that varies by hardware.</span></span></span><span class="data-val skeleton" id="glAntialias">--</span></div>
+        </div>
+
+        <!-- BEHAVIORAL TRACKING -->
+        <div class="panel col-6">
+            <div class="panel-header">
+                <span class="panel-label">👁 Behavioral Tracking</span>
+                <div class="badge badge-yellow"><span class="badge-dot"></span>Live</div>
+            </div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Mouse Position<span class="tip-icon">ⓘ</span><span class="tip-box">Real-time cursor coordinates — combined into movement patterns for behavioral fingerprinting and bot detection.</span></span></span><span class="data-val" id="mousePos">0, 0</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Keystrokes<span class="tip-icon">ⓘ</span><span class="tip-box">Total keypresses — typing rhythm (inter-key timing) is a biometric that identifies individuals without device access.</span></span></span><span class="data-val" id="keyCount">0</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Click Count<span class="tip-icon">ⓘ</span><span class="tip-box">Total mouse clicks — combined with position data to build interaction behavioral fingerprints.</span></span></span><span class="data-val" id="clickCount">0</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Scroll Depth<span class="tip-icon">ⓘ</span><span class="tip-box">% of page scrolled — engagement signal used by ad networks to measure content consumption and user intent.</span></span></span><span class="data-val" id="scrollDepth">0%</span></div>
+            <div class="data-row"><span class="data-key"><span class="tip" tabindex="0">Time on Page<span class="tip-icon">ⓘ</span><span class="tip-box">Session duration — a behavioral signal used for engagement scoring and user profiling by analytics systems.</span></span></span><span class="data-val" id="timeOnPage">0s</span></div>
+            <div class="canvas-container" style="background:#0a0a0c;flex:1;margin-top:0.875rem;">
+                <span class="canvas-label">Mouse Heatmap (radial density)</span>
+                <canvas id="mouseMap" style="width:100%;height:100%;"></canvas>
             </div>
         </div>
 
-        <!-- SECURITY RECOMMENDATIONS (shown immediately in skeleton state) -->
-        <!-- FIX #15: panel visible from start with skeleton loader -->
+        <!-- SECURITY RECOMMENDATIONS -->
         <div class="panel col-12 primary-glow" id="securityPanel">
             <div class="panel-header">
-                <span class="panel-label">🛡 Security Analysis & Countermeasures</span>
+                <span class="panel-label">🛡 Security Analysis &amp; Countermeasures</span>
                 <div class="badge badge-blue" id="securityBadge"><span class="badge-dot"></span>Pending</div>
             </div>
             <div id="securityRecommendations">
@@ -768,53 +420,27 @@
         </div>
 
         <!-- LATENCY MONITOR -->
-        <!-- FIX #10: min-height via .latency-panel class -->
         <div class="panel col-8 latency-panel">
             <div class="panel-header">
                 <span class="panel-label">📡 Latency Monitor</span>
-                <span id="latencyAvg" style="font-size:0.75rem; color: var(--text-tertiary);">avg: -- ms</span>
+                <span id="latencyAvg" style="font-size:0.75rem;color:var(--text-tertiary);">avg: -- ms</span>
             </div>
-            <div style="flex: 1; position: relative; min-height: 180px;">
+            <div style="flex:1;position:relative;min-height:180px;">
                 <canvas id="pingChart"></canvas>
             </div>
         </div>
 
-        <!-- BEHAVIORAL TRACKING -->
+        <!-- SYSTEM LOG -->
         <div class="panel col-4">
             <div class="panel-header">
-                <span class="panel-label">👁 Behavioral Tracking</span>
-                <div class="badge badge-yellow"><span class="badge-dot"></span>Live</div>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Mouse Position</span>
-                <span class="data-val" id="mousePos">0, 0</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Keystrokes (count)</span>
-                <span class="data-val" id="keyCount">0</span>
-            </div>
-            <div class="data-row">
-                <span class="data-key">Time on Page</span>
-                <span class="data-val" id="timeOnPage">0s</span>
-            </div>
-            <!-- FIX #7: mouseMap sized by CSS, ResizeObserver keeps it crisp -->
-            <div class="canvas-container" style="background: #0a0a0c; flex: 1; margin-top: 0.875rem;">
-                <span class="canvas-label">Mouse Movement Heatmap</span>
-                <canvas id="mouseMap" style="width:100%; height:100%;"></canvas>
-            </div>
-        </div>
-
-        <!-- SYSTEM LOG -->
-        <div class="panel col-12">
-            <div class="panel-header">
                 <span class="panel-label">⌨ System Log</span>
-                <button class="btn-ghost" id="clearLogBtn" style="font-size: 0.72rem; padding: 2px 8px;">Clear</button>
+                <button class="btn-ghost" id="clearLogBtn" style="font-size:0.72rem;padding:2px 8px;">Clear</button>
             </div>
             <div class="console-output" id="consoleLog" aria-live="polite" aria-atomic="false"></div>
         </div>
 
-    </div><!-- .grid -->
-</div><!-- .layout -->
+    </div>
+</div>
 
 <!-- MODAL -->
 <div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -824,84 +450,37 @@
             <button class="btn-ghost" id="closeModal" aria-label="Close dialog">✕ Close</button>
         </div>
         <div class="modal-body">
-            <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.7; font-size: 0.9rem;">
-                Panopticon demonstrates client-side data collection techniques. It illustrates how modern web applications can identify and track users without cookies, relying instead on browser APIs, hardware differences, and network behaviors.
-            </p>
+            <p style="margin-bottom:1.5rem;color:var(--text-secondary);line-height:1.7;font-size:0.9rem;">Panopticon demonstrates client-side data collection techniques used by real-world trackers. Every signal shown is actively collected by ad networks today.</p>
 
-            <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.25);">
-                <h4 style="color: var(--text-primary); margin-bottom: 0.4rem; font-size: 0.95rem;">For Developers</h4>
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
-                    Understand the code behind these diagnostics. View the source to see how Canvas Fingerprinting, WebRTC IP leakage, and Audio Context analysis are implemented in pure JavaScript.
-                </p>
-                <a href="https://github.com/sanjaykohli/Panopticon" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="display: inline-flex; background: var(--bg-panel);">
-                    View Source on GitHub ↗
-                </a>
+            <div style="margin-bottom:1.5rem;padding:1.25rem;background:rgba(239,68,68,0.07);border-radius:10px;border:1px solid rgba(239,68,68,0.2);">
+                <h4 style="color:var(--text-primary);margin-bottom:0.4rem;font-size:0.95rem;">⚠️ About the Entropy Score</h4>
+                <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">The score is an <strong>educational approximation</strong> — fixed points per signal category, not real population-based measurement. For true uniqueness measurement see <a href="https://coveryourtracks.eff.org" target="_blank" rel="noopener" style="color:var(--accent-primary);">EFF Cover Your Tracks</a> or <a href="https://amiunique.org" target="_blank" rel="noopener" style="color:var(--accent-primary);">AmIUnique</a>.</p>
+            </div>
+
+            <div style="margin-bottom:1.5rem;padding:1.25rem;background:rgba(99,102,241,0.08);border-radius:10px;border:1px solid rgba(99,102,241,0.25);">
+                <h4 style="color:var(--text-primary);margin-bottom:0.4rem;font-size:0.95rem;">For Developers</h4>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6;">View the source to see Canvas Fingerprinting, WebRTC IP leakage, font enumeration, and Audio Context analysis implemented in pure vanilla JavaScript.</p>
+                <a href="https://github.com/sanjaykohli/Panopticon" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="display:inline-flex;background:var(--bg-panel);">View Source on GitHub ↗</a>
             </div>
 
             <div class="accordion-item">
-                <div class="accordion-header" id="acc1-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc1-content">
-                    <span>Canvas Fingerprinting</span>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <div class="badge badge-red">Critical Risk</div>
-                        <span class="accordion-chevron"></span>
-                    </div>
-                </div>
-                <div class="accordion-content" id="acc1-content" role="region" aria-labelledby="acc1-header">
-                    <div class="impact-grid">
-                        <div class="impact-box">
-                            <div class="impact-title">Technique</div>
-                            <p style="font-size: 0.85rem; line-height: 1.6;">The browser renders hidden text and gradients. Subtle differences in GPU rendering, anti-aliasing, and OS font handling produce unique pixel data. We hash this data with SHA-256.</p>
-                        </div>
-                        <div class="impact-box">
-                            <div class="impact-title">Privacy Impact</div>
-                            <p style="font-size: 0.85rem; line-height: 1.6;">Creates a persistent identifier that remains consistent even after clearing cookies or using private browsing. Incognito mode does NOT protect you.</p>
-                        </div>
-                    </div>
-                </div>
+                <div class="accordion-header" id="acc1-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc1-content"><span>Canvas Fingerprinting</span><div style="display:flex;gap:8px;align-items:center;"><div class="badge badge-red">Critical Risk</div><span class="accordion-chevron"></span></div></div>
+                <div class="accordion-content" id="acc1-content" role="region" aria-labelledby="acc1-header"><div class="impact-grid"><div class="impact-box"><div class="impact-title">Technique</div><p style="font-size:0.85rem;line-height:1.6;">The browser renders hidden text and gradients. Subtle differences in GPU rendering, anti-aliasing, and OS font handling produce unique pixel data hashed with SHA-256 (truncated to 16 chars for display).</p></div><div class="impact-box"><div class="impact-title">Privacy Impact</div><p style="font-size:0.85rem;line-height:1.6;">Creates a persistent identifier consistent even after clearing cookies or using private browsing. Incognito mode does NOT protect you.</p></div></div></div>
             </div>
 
             <div class="accordion-item">
-                <div class="accordion-header" id="acc2-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc2-content">
-                    <span>WebRTC IP Leak</span>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <div class="badge badge-red">Critical Risk</div>
-                        <span class="accordion-chevron"></span>
-                    </div>
-                </div>
-                <div class="accordion-content" id="acc2-content" role="region" aria-labelledby="acc2-header">
-                    <div class="impact-grid">
-                        <div class="impact-box">
-                            <div class="impact-title">Technique</div>
-                            <p style="font-size: 0.85rem; line-height: 1.6;">WebRTC establishes peer-to-peer connections. To facilitate this, it may expose local LAN IP addresses and, in some configurations, the real public IP behind a VPN.</p>
-                        </div>
-                        <div class="impact-box">
-                            <div class="impact-title">Privacy Impact</div>
-                            <p style="font-size: 0.85rem; line-height: 1.6;">Reveals internal network architecture and potentially bypasses VPN protections to disclose physical location.</p>
-                        </div>
-                    </div>
-                </div>
+                <div class="accordion-header" id="acc2-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc2-content"><span>WebRTC IP Leak</span><div style="display:flex;gap:8px;align-items:center;"><div class="badge badge-red">Critical Risk</div><span class="accordion-chevron"></span></div></div>
+                <div class="accordion-content" id="acc2-content" role="region" aria-labelledby="acc2-header"><div class="impact-grid"><div class="impact-box"><div class="impact-title">Technique</div><p style="font-size:0.85rem;line-height:1.6;">WebRTC may expose local LAN IP addresses via ICE candidate harvesting even behind a VPN.</p></div><div class="impact-box"><div class="impact-title">Privacy Impact</div><p style="font-size:0.85rem;line-height:1.6;">Reveals internal network architecture and potentially bypasses VPN protections. Fix: Firefox about:config → media.peerconnection.enabled = false.</p></div></div></div>
             </div>
 
             <div class="accordion-item">
-                <div class="accordion-header" id="acc3-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc3-content">
-                    <span>Hardware & Audio Context</span>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <div class="badge badge-yellow">Medium Risk</div>
-                        <span class="accordion-chevron"></span>
-                    </div>
-                </div>
-                <div class="accordion-content" id="acc3-content" role="region" aria-labelledby="acc3-header">
-                    <div class="impact-grid">
-                        <div class="impact-box">
-                            <div class="impact-title">Technique</div>
-                            <p style="font-size: 0.85rem; line-height: 1.6;">Scripts analyze CPU core count, RAM estimates, battery behavior, and audio signal processing characteristics unique to each device's hardware stack.</p>
-                        </div>
-                        <div class="impact-box">
-                            <div class="impact-title">Privacy Impact</div>
-                            <p style="font-size: 0.85rem; line-height: 1.6;">Contributes to a composite fingerprint. While individual metrics are not unique, the aggregate profile is highly specific to you.</p>
-                        </div>
-                    </div>
-                </div>
+                <div class="accordion-header" id="acc3-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc3-content"><span>Font Enumeration</span><div style="display:flex;gap:8px;align-items:center;"><div class="badge badge-red">High Risk</div><span class="accordion-chevron"></span></div></div>
+                <div class="accordion-content" id="acc3-content" role="region" aria-labelledby="acc3-header"><div class="impact-grid"><div class="impact-box"><div class="impact-title">Technique</div><p style="font-size:0.85rem;line-height:1.6;">Text is rendered in a hidden canvas with each candidate font. Fonts that change text width vs. a fallback baseline are considered installed.</p></div><div class="impact-box"><div class="impact-title">Privacy Impact</div><p style="font-size:0.85rem;line-height:1.6;">Your installed font set reflects OS, applications, and language packs — creating a very high-entropy identifier that persists across browsers.</p></div></div></div>
+            </div>
+
+            <div class="accordion-item">
+                <div class="accordion-header" id="acc4-header" role="button" tabindex="0" aria-expanded="false" aria-controls="acc4-content"><span>Hardware &amp; Audio Context</span><div style="display:flex;gap:8px;align-items:center;"><div class="badge badge-yellow">Medium Risk</div><span class="accordion-chevron"></span></div></div>
+                <div class="accordion-content" id="acc4-content" role="region" aria-labelledby="acc4-header"><div class="impact-grid"><div class="impact-box"><div class="impact-title">Technique</div><p style="font-size:0.85rem;line-height:1.6;">Scripts analyze CPU cores, RAM, storage quota, battery, and audio signal processing output unique to each device's hardware.</p></div><div class="impact-box"><div class="impact-title">Privacy Impact</div><p style="font-size:0.85rem;line-height:1.6;">While individual metrics may not be unique, the aggregate hardware profile is highly specific to you and stable across browser sessions.</p></div></div></div>
             </div>
         </div>
     </div>
@@ -909,48 +488,65 @@
 
 <script>
 /**
- * PANOPTICON v4 — All fixes from review applied:
- *  #1  canvasPreview properly cached via id in DOM
- *  #2  Real-latency beacon via Cloudflare trace (no-cors, cache-busted)
- *  #3  Entropy ceiling raised to 135 (actual sum of all module points)
- *  #4  WebRTC ICE candidate guard (resolved flag)
- *  #5  pc.createOffer wrapped in try/catch
- *  #6  ISP check reads from fingerprintData.identity.org not DOM
- *  #7  mouseMap ResizeObserver keeps canvas pixel-crisp
- *  #8  scanStatusText has aria-live="polite" in HTML
- *  #9  Header actions split into two rows (status + buttons)
- * #10  Latency panel has min-height via CSS class
- * #11  <code> in consent banner styled with pill treatment
- * #12  camo-hint has explicit color
- * #13  Entropy counter animates from 0 via rAF
- * #14  Log capped at 50 entries
- * #15  Security panel shown immediately with skeleton state
- * #16  Consent gate verified — no fetches before startDiagnostics()
- * #17  Consent banner notes tab-scope of session storage
+ * PANOPTICON v5
+ * All critical bugs fixed:
+ * - Tagged-template syntax fixed (proper parentheses everywhere)
+ * - VPN detection: exact timezone string compare, not broken prefix includes()
+ * - sha256 output labeled as truncated
+ * - Decline flow calls App.destroy() before DOM replacement
+ * - WebRTC timeout tracked in state and cleared in destroy()
+ * - Modal focus trap implemented
+ *
+ * New signals:
+ * - Font enumeration (canvas measurement)
+ * - navigator.languages, DNT, GPC
+ * - Touch points, DPR, screen avail area vs full
+ * - GPU vendor (in addition to renderer)
+ * - WebGL: max texture, shader precision, viewport dims, extensions, antialias
+ * - Media devices count
+ * - Storage quota
+ * - CSS media queries: color-scheme, reduced-motion, orientation
+ * - Plugins count
+ *
+ * Improvements:
+ * - Fingerprint stability demo (localStorage hash)
+ * - Heatmap uses radial gradient density painting
+ * - Scroll depth and click count in behavioral panel
+ * - Latency uses image load on self URL (avoids no-cors 1.1.1.1 issue)
+ * - AbortController for fetch cleanup
+ * - Tooltip on every data field
+ * - prefers-reduced-motion honored in CSS
+ * - CSP meta tag
+ * - Entropy score disclaimer
+ * - Links to EFF Cover Your Tracks and AmIUnique
+ * - Full fingerprintData export
  */
 const App = {
     state: {
         consentGiven: false,
         entropy: 0,
-        displayedEntropy: 0,    // FIX #13: tracked separately for animation
+        displayedEntropy: 0,
         fingerprintData: {},
         startTime: Date.now(),
         keyCount: 0,
+        clickCount: 0,
         pingHistory: [],
         _pingInterval: null,
         _timerInterval: null,
-        _entropyRAF: null,      // FIX #13: rAF handle
+        _entropyRAF: null,
+        _webRTCLeakTimeout: null,
+        _pendingFetches: [],
         leaks: { webRTC: false, battery: false },
     },
 
     dom: {},
 
-    /* ─── BOOT ───────────────────────────────────────────────────── */
     async init() {
         this.cacheDOM();
         this.initUI();
         this.setupListeners();
         this.initChart();
+        this.checkFingerprintStability();
 
         const consentGiven = sessionStorage.getItem('panopticon_consent');
         if (consentGiven === 'true') {
@@ -959,14 +555,14 @@ const App = {
             this.startDiagnostics();
         } else {
             this.dom.consentBanner.classList.remove('hide');
-            this.dom.scanStatusText.textContent = 'Awaiting consent';
+            if (this.dom.scanStatusText) this.dom.scanStatusText.textContent = 'Awaiting consent';
         }
     },
 
     startDiagnostics() {
-        this.log('Panopticon — diagnostics started (consent given)', 'system');
-        this.dom.scanStatusText.textContent = 'Scanning...';
-        this.dom.scanDot?.classList.remove('done');
+        this.log('Panopticon v5 — diagnostics started', 'system');
+        if (this.dom.scanStatusText) this.dom.scanStatusText.textContent = 'Scanning...';
+        if (this.dom.scanDot) this.dom.scanDot.classList.remove('done');
 
         Promise.allSettled([
             this.modules.identity.run(),
@@ -974,28 +570,34 @@ const App = {
             this.modules.hardware.run(),
             this.modules.canvas.run(),
             this.modules.audio.run(),
+            this.modules.advancedSignals.run(),
+            this.modules.webglDeep.run(),
             this.modules.behavior.run(),
         ]).then(() => {
             this.scanComplete();
             this.generateDeepInsights();
+            this.saveFingerprint();
         });
     },
 
-    /* ─── DOM CACHE ─────────────────────────────────────────────── */
     cacheDOM() {
-        // FIX #1: canvasPreview is now included (removed erroneous exclusion comment)
         const ids = [
             'consentBanner','acceptConsentBtn','declineConsentBtn','resetSessionBtn',
-            'publicIP','ispInfo','geoLoc','vpnStatus','localIP',
+            'publicIP','ispInfo','geoLoc','vpnStatus','localIP','timezoneVal',
             'pingVal','connType','downlink','osVal','cpuVal',
-            'ramVal','resVal','batteryVal','gpuVal','canvasHash',
-            'fingerprintCanvas','canvasPreview','audioHash','uaToken',
+            'ramVal','batteryVal','gpuVal','gpuVendorVal','canvasHash',
+            'fingerprintCanvas','canvasPreview','fontProbeCanvas','audioHash','uaToken',
             'mousePos','keyCount','timeOnPage','mouseMap','consoleLog',
             'entropyScore','entropyBar','uniqueRatio','scoreTier',
             'infoModal','closeModal','infoTrigger','copyReportBtn','netStatus',
             'securityPanel','securityRecommendations','securityBadge',
             'camouflageBtn','camoHint','scanDot','scanStatusText',
             'identityBadge','clearLogBtn','latencyAvg',
+            'dprVal','touchVal','langVal','dntVal','gpcVal','colorSchemeVal',
+            'reducedMotionVal','pluginsVal','fontsVal','resVal',
+            'glMaxTexture','glShaderPrec','glMaxViewport','glExtensions','glAntialias',
+            'mediaDevices','storageVal','scrollDepth','clickCount',
+            'stabilityBanner',
         ];
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -1004,9 +606,7 @@ const App = {
         });
     },
 
-    /* ─── LISTENERS ─────────────────────────────────────────────── */
     setupListeners() {
-        // Consent
         this.dom.acceptConsentBtn.addEventListener('click', () => {
             sessionStorage.setItem('panopticon_consent', 'true');
             this.dom.consentBanner.classList.add('hide');
@@ -1015,7 +615,7 @@ const App = {
         });
 
         this.dom.declineConsentBtn.addEventListener('click', () => {
-            alert('You declined data collection. The tool will not run.\n\nRefresh the page to give consent later.');
+            App.destroy();
             document.body.innerHTML = `
                 <div style="text-align:center;margin-top:4rem;color:#8892a4;font-family:'Syne',sans-serif;">
                     <h1 style="font-size:2rem;margin-bottom:1rem;color:#f0f2f8;">Panopticon</h1>
@@ -1023,42 +623,40 @@ const App = {
                 </div>`;
         });
 
-        // Reset
         this.dom.resetSessionBtn.addEventListener('click', () => {
-            if (confirm('⚠️ Reset session will clear all collected data and reload the page. Continue?')) {
+            if (confirm('Reset session will clear all collected data and reload the page. Continue?')) {
                 sessionStorage.removeItem('panopticon_consent');
+                localStorage.removeItem('panopticon_fp_hash');
+                localStorage.removeItem('panopticon_fp_date');
                 location.reload();
             }
         });
 
-        // Camouflage
         this.dom.camouflageBtn.addEventListener('click', () => {
             const isActive = document.body.classList.toggle('camouflage-active');
             this.dom.camouflageBtn.setAttribute('aria-pressed', String(isActive));
-            this.dom.camouflageBtn.innerHTML = isActive
-                ? '<span>⬜</span> Reveal UI'
-                : '<span>⬛</span> Camouflage Mode';
-            // FIX #12: explicit display toggle; color is set in CSS
-            if (this.dom.camoHint) {
-                this.dom.camoHint.style.display = isActive ? 'block' : 'none';
-            }
-            this.log(isActive ? 'Camouflage mode activated — hover panels to reveal' : 'Camouflage mode deactivated', 'warn');
+            this.dom.camouflageBtn.innerHTML = isActive ? '<span>⬜</span> Reveal UI' : '<span>⬛</span> Camouflage Mode';
+            if (this.dom.camoHint) this.dom.camoHint.style.display = isActive ? 'block' : 'none';
+            this.log(isActive ? 'Camouflage mode activated' : 'Camouflage mode deactivated', 'warn');
         });
 
-        // Modal
-        this.dom.infoTrigger.addEventListener('click', () => this.dom.infoModal.classList.add('active'));
-        this.dom.closeModal.addEventListener('click', () => this.dom.infoModal.classList.remove('active'));
-        this.dom.infoModal.addEventListener('click', e => {
-            if (e.target === this.dom.infoModal) this.dom.infoModal.classList.remove('active');
-        });
+        this.dom.infoTrigger.addEventListener('click', () => this.openModal());
+        this.dom.closeModal.addEventListener('click', () => this.closeModal());
+        this.dom.infoModal.addEventListener('click', e => { if (e.target === this.dom.infoModal) this.closeModal(); });
+
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape' && this.dom.infoModal.classList.contains('active')) {
-                this.dom.infoModal.classList.remove('active');
-                this.dom.infoTrigger.focus();
+                this.closeModal();
+            }
+            if (this.dom.infoModal.classList.contains('active') && e.key === 'Tab') {
+                const focusable = this.dom.infoModal.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])');
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+                else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
             }
         });
 
-        // Accordions
         document.querySelectorAll('.accordion-header').forEach(header => {
             const toggle = () => {
                 const expanded = header.getAttribute('aria-expanded') === 'true';
@@ -1067,14 +665,11 @@ const App = {
                 if (content) content.classList.toggle('open', !expanded);
             };
             header.addEventListener('click', toggle);
-            header.addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
-            });
+            header.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
         });
 
-        // Copy JSON
         this.dom.copyReportBtn.addEventListener('click', () => {
-            if (confirm('⚠️ The copied JSON contains potentially identifying information (IP, hashes, hardware). Share at your own risk.\n\nContinue?')) {
+            if (confirm('The copied JSON contains potentially identifying information. Share at your own risk. Continue?')) {
                 const report = JSON.stringify(this.state.fingerprintData, null, 2);
                 navigator.clipboard.writeText(report).then(() => {
                     this.dom.copyReportBtn.innerHTML = '✓ Copied!';
@@ -1083,25 +678,60 @@ const App = {
             }
         });
 
-        // Clear log
-        this.dom.clearLogBtn?.addEventListener('click', () => {
-            if (this.dom.consoleLog) this.dom.consoleLog.innerHTML = '';
-        });
+        this.dom.clearLogBtn?.addEventListener('click', () => { if (this.dom.consoleLog) this.dom.consoleLog.innerHTML = ''; });
 
-        // Online/Offline
         window.addEventListener('offline', () => {
-            this.dom.netStatus.className = 'badge badge-red';
-            this.dom.netStatus.innerHTML = '<span class="badge-dot"></span>Offline';
+            if (this.dom.netStatus) { this.dom.netStatus.className = 'badge badge-red'; this.dom.netStatus.innerHTML = '<span class="badge-dot"></span>Offline'; }
             this.log('Network connection lost', 'danger');
         });
         window.addEventListener('online', () => {
-            this.dom.netStatus.className = 'badge badge-green';
-            this.dom.netStatus.innerHTML = '<span class="badge-dot"></span>Online';
+            if (this.dom.netStatus) { this.dom.netStatus.className = 'badge badge-green'; this.dom.netStatus.innerHTML = '<span class="badge-dot"></span>Online'; }
             this.log('Network connection restored', 'system');
         });
     },
 
-    /* ─── UTILS ─────────────────────────────────────────────────── */
+    openModal() {
+        this.dom.infoModal.classList.add('active');
+        const focusable = this.dom.infoModal.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])');
+        if (focusable.length) focusable[0].focus();
+    },
+    closeModal() {
+        this.dom.infoModal.classList.remove('active');
+        this.dom.infoTrigger.focus();
+    },
+
+    checkFingerprintStability() {
+        const prevHash = localStorage.getItem('panopticon_fp_hash');
+        const prevDate = localStorage.getItem('panopticon_fp_date');
+        if (prevHash && prevDate && this.dom.stabilityBanner) {
+            const days = Math.round((Date.now() - parseInt(prevDate, 10)) / 86400000);
+            const age = days === 0 ? 'today' : days === 1 ? '1 day ago' : `${days} days ago`;
+            this.dom.stabilityBanner.classList.add('visible');
+            this.dom.stabilityBanner.innerHTML = `
+                <strong>🔁 You were re-identified without cookies!</strong>
+                <span style="font-size:0.82rem;color:var(--text-secondary);">Your fingerprint hash matches a visit from <strong>${age}</strong> (${new Date(parseInt(prevDate,10)).toLocaleDateString()}). This proves fingerprinting persists across sessions — without any cookies.</span>`;
+        }
+    },
+    saveFingerprint() {
+        const stableStr = [
+            this.state.fingerprintData.canvasHash || '',
+            this.state.fingerprintData.audioHash || '',
+            this.state.fingerprintData.gpu || '',
+            this.state.fingerprintData.hardware?.res || '',
+        ].join('|');
+        this.sha256(stableStr).then(hash => {
+            const prev = localStorage.getItem('panopticon_fp_hash');
+            if (!prev) {
+                localStorage.setItem('panopticon_fp_hash', hash);
+                localStorage.setItem('panopticon_fp_date', Date.now().toString());
+            } else if (prev !== hash) {
+                localStorage.setItem('panopticon_fp_hash', hash);
+                localStorage.setItem('panopticon_fp_date', Date.now().toString());
+                this.log('Fingerprint changed since last visit — update detected', 'warn');
+            }
+        });
+    },
+
     async sha256(str) {
         const encoder = new TextEncoder();
         const data = encoder.encode(str);
@@ -1117,13 +747,11 @@ const App = {
         el.textContent = value;
     },
 
-    /* ─── MODULES ───────────────────────────────────────────────── */
     modules: {
 
         identity: {
             run: async () => {
                 App.log('Querying public identity…', 'system');
-                // FIX #16: this only runs after consent gate
                 const APIs = [
                     'https://ipapi.co/json/',
                     'https://ip-api.com/json/?fields=status,query,org,city,countryCode,timezone',
@@ -1131,26 +759,28 @@ const App = {
                 let data = null;
                 for (const url of APIs) {
                     try {
-                        const res = await Promise.race([
-                            fetch(url),
-                            new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), 6000))
-                        ]);
-                        if (!res.ok) throw new Error('Non-OK response');
+                        const ctrl = new AbortController();
+                        const tid = setTimeout(() => ctrl.abort(), 6000);
+                        App.state._pendingFetches.push(ctrl);
+                        const res = await fetch(url, { signal: ctrl.signal });
+                        clearTimeout(tid);
+                        if (!res.ok) throw new Error('Non-OK');
                         data = await res.json();
-                        // Normalize ip-api.com field differences
                         if (data.query) { data.ip = data.query; data.country_code = data.countryCode; }
                         if (data.ip) break;
                     } catch { /* try next */ }
                 }
+
+                const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                if (App.dom.timezoneVal) App.dom.timezoneVal.textContent = localTz || 'Unknown';
 
                 if (!data || !data.ip) {
                     App.resolve(App.dom.publicIP, 'Blocked / Hidden');
                     App.resolve(App.dom.ispInfo, 'Unknown');
                     App.resolve(App.dom.geoLoc, 'Unknown');
                     App.resolve(App.dom.vpnStatus, 'Indeterminate');
-                    App.dom.identityBadge.className = 'badge badge-green';
-                    App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>Protected';
-                    App.state.fingerprintData.identity = { ip: 'hidden', org: 'unknown', geo: 'unknown' };
+                    if (App.dom.identityBadge) { App.dom.identityBadge.className = 'badge badge-green'; App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>Protected'; }
+                    App.state.fingerprintData.identity = { ip: 'hidden', org: 'unknown', geo: 'unknown', timezone: localTz };
                     return;
                 }
 
@@ -1158,34 +788,27 @@ const App = {
                 App.resolve(App.dom.ispInfo, data.org || data.asn || 'Unknown');
                 App.resolve(App.dom.geoLoc, [data.city, data.country_code].filter(Boolean).join(', ') || 'Unknown');
 
-                // Timezone mismatch = likely VPN
-                const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const apiTz   = data.timezone || '';
-                const mismatch = apiTz && !localTz.toLowerCase().includes(apiTz.split('/')[0].toLowerCase());
+                // Improved VPN detection: exact timezone string comparison
+                const apiTz = (data.timezone || '').toLowerCase();
+                const localTzLower = localTz.toLowerCase();
+                const mismatch = apiTz && localTzLower && apiTz !== localTzLower;
 
                 if (mismatch) {
-                    App.resolve(App.dom.vpnStatus, 'Likely VPN/Proxy');
-                    App.dom.vpnStatus.classList.add('risk-highlight');
-                    App.dom.identityBadge.className = 'badge badge-yellow';
-                    App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>VPN Detected';
+                    App.resolve(App.dom.vpnStatus, `Likely VPN/Proxy (IP tz: ${data.timezone})`);
+                    if (App.dom.vpnStatus) App.dom.vpnStatus.classList.add('risk-highlight');
+                    if (App.dom.identityBadge) { App.dom.identityBadge.className = 'badge badge-yellow'; App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>VPN Detected'; }
                 } else {
                     App.resolve(App.dom.vpnStatus, 'Direct Connection');
-                    App.dom.identityBadge.className = 'badge badge-red';
-                    App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>Exposed';
+                    if (App.dom.identityBadge) { App.dom.identityBadge.className = 'badge badge-red'; App.dom.identityBadge.innerHTML = '<span class="badge-dot"></span>Exposed'; }
                 }
 
                 App.updateEntropy(50);
-                App.state.fingerprintData.identity = {
-                    ip: data.ip,
-                    org: data.org || 'Unknown',
-                    geo: [data.city, data.country_code].filter(Boolean).join(', '),
-                };
+                App.state.fingerprintData.identity = { ip: data.ip, org: data.org || 'Unknown', geo: [data.city, data.country_code].filter(Boolean).join(', '), timezone: localTz, vpnDetected: mismatch };
             }
         },
 
         network: {
             run: () => new Promise(resolve => {
-                // Connection info
                 const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
                 if (conn) {
                     App.resolve(App.dom.connType, conn.effectiveType ? conn.effectiveType.toUpperCase() : 'Unknown');
@@ -1195,7 +818,19 @@ const App = {
                     App.resolve(App.dom.downlink, 'Not Available');
                 }
 
-                // FIX #4: guard against multiple ICE callbacks with resolved flag
+                if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                    navigator.mediaDevices.enumerateDevices().then(devices => {
+                        const audio = devices.filter(d => d.kind === 'audioinput').length;
+                        const video = devices.filter(d => d.kind === 'videoinput').length;
+                        const out = devices.filter(d => d.kind === 'audiooutput').length;
+                        App.resolve(App.dom.mediaDevices, `${audio} mic, ${video} cam, ${out} spk`);
+                        App.state.fingerprintData.mediaDevices = { audio, video, output: out };
+                        App.updateEntropy(5);
+                    }).catch(() => App.resolve(App.dom.mediaDevices, 'Blocked'));
+                } else {
+                    App.resolve(App.dom.mediaDevices, 'Not Available');
+                }
+
                 let rtcResolved = false;
                 let pc;
                 try {
@@ -1203,17 +838,13 @@ const App = {
                     pc.createDataChannel('');
                 } catch {
                     App.resolve(App.dom.localIP, 'Not Available');
-                    App.dom.localIP.classList.remove('skeleton');
                     startPing();
                     resolve();
                     return;
                 }
 
-                const leakTimeout = setTimeout(() => {
-                    if (!rtcResolved) {
-                        App.resolve(App.dom.localIP, 'Not Leaked');
-                        rtcResolved = true;
-                    }
+                App.state._webRTCLeakTimeout = setTimeout(() => {
+                    if (!rtcResolved) { App.resolve(App.dom.localIP, 'Not Leaked'); rtcResolved = true; }
                     if (pc && pc.signalingState !== 'closed') pc.close();
                     resolve();
                 }, 5000);
@@ -1226,49 +857,45 @@ const App = {
                         rtcResolved = true;
                         const ip = match[0];
                         App.resolve(App.dom.localIP, ip);
-                        App.dom.localIP.classList.add('risk-highlight');
+                        if (App.dom.localIP) App.dom.localIP.classList.add('risk-highlight');
                         App.log(`WebRTC leak detected: local IP = ${ip}`, 'danger');
                         App.state.leaks.webRTC = true;
                         App.updateEntropy(20);
                         App.state.fingerprintData.localIP = ip;
-                        clearTimeout(leakTimeout);
+                        clearTimeout(App.state._webRTCLeakTimeout);
                         if (pc && pc.signalingState !== 'closed') pc.close();
                         startPing();
                         resolve();
                     }
                 };
 
-                // FIX #5: createOffer wrapped in try/catch
                 pc.createOffer()
                     .then(d => pc.setLocalDescription(d))
                     .catch(err => {
                         App.log(`WebRTC offer error: ${err.message}`, 'warn');
                         App.resolve(App.dom.localIP, 'Error');
                         rtcResolved = true;
-                        clearTimeout(leakTimeout);
+                        clearTimeout(App.state._webRTCLeakTimeout);
                         startPing();
                         resolve();
                     });
 
-                // FIX #2: Real network latency via Cloudflare trace (no-cors, cache-busted)
+                // Latency: load the page itself cache-busted for real RTT
                 function startPing() {
                     App.state._pingInterval = setInterval(() => {
                         const start = performance.now();
-                        fetch(`https://1.1.1.1/cdn-cgi/trace?_=${Date.now()}`, {
-                            method: 'GET',
-                            mode: 'no-cors',
-                            cache: 'no-store',
-                        }).then(() => {
+                        const img = new Image();
+                        const done = () => {
                             const rtt = Math.round(performance.now() - start);
-                            App.dom.pingVal.textContent = `${rtt} ms`;
+                            if (App.dom.pingVal) App.dom.pingVal.textContent = `${rtt} ms`;
                             App.state.pingHistory.push(rtt);
                             if (App.state.pingHistory.length > 20) App.state.pingHistory.shift();
-                            const avg = Math.round(
-                                App.state.pingHistory.reduce((a, b) => a + b, 0) / App.state.pingHistory.length
-                            );
+                            const avg = Math.round(App.state.pingHistory.reduce((a, b) => a + b, 0) / App.state.pingHistory.length);
                             if (App.dom.latencyAvg) App.dom.latencyAvg.textContent = `avg: ${avg} ms`;
                             App.updateChart(rtt);
-                        }).catch(() => {});
+                        };
+                        img.onload = done; img.onerror = done;
+                        img.src = location.pathname + '?_ping=' + Date.now();
                     }, 2000);
                 }
             })
@@ -1281,107 +908,103 @@ const App = {
                     try {
                         const uaHigh = await navigator.userAgentData.getHighEntropyValues(['platform','platformVersion']);
                         osStr = `${uaHigh.platform} ${uaHigh.platformVersion}`.trim() || navigator.userAgentData.platform;
-                    } catch {
-                        osStr = navigator.userAgentData.platform || navigator.platform;
-                    }
-                } else {
-                    osStr = navigator.platform || 'Unknown';
-                }
+                    } catch { osStr = navigator.userAgentData.platform || navigator.platform; }
+                } else { osStr = navigator.platform || 'Unknown'; }
+
                 App.resolve(App.dom.osVal, osStr);
                 App.resolve(App.dom.cpuVal, `${navigator.hardwareConcurrency || 'Unknown'} logical cores`);
                 App.resolve(App.dom.ramVal, navigator.deviceMemory ? `~${navigator.deviceMemory} GB (bucket)` : 'Protected');
 
-                const { width, height, colorDepth } = window.screen;
-                App.resolve(App.dom.resVal, `${width}×${height} @ ${colorDepth}bit`);
+                const { width, height, availWidth, availHeight, colorDepth } = window.screen;
+                const taskbarH = height - availHeight;
+                const taskbarW = width - availWidth;
+                App.resolve(App.dom.resVal, `${width}x${height} / avail ${availWidth}x${availHeight} (taskbar ${taskbarW}x${taskbarH})`);
 
-                // User-agent token
+                const dpr = window.devicePixelRatio || 1;
+                if (App.dom.dprVal) App.dom.dprVal.textContent = `${dpr}x (${dpr >= 2 ? 'HiDPI/Retina' : 'Standard'})`;
+
+                const touch = navigator.maxTouchPoints || 0;
+                if (App.dom.touchVal) App.dom.touchVal.textContent = `${touch} pt${touch !== 1 ? 's' : ''} (${touch === 0 ? 'Desktop' : touch <= 2 ? 'Stylus' : 'Touch'})`;
+
                 const ua = navigator.userAgent;
-                if (App.dom.uaToken) {
-                    App.dom.uaToken.textContent = ua.slice(0, 80) + (ua.length > 80 ? '…' : '');
-                    App.dom.uaToken.classList.remove('skeleton');
-                    App.dom.uaToken.classList.add('resolved');
-                }
+                if (App.dom.uaToken) { App.dom.uaToken.textContent = ua.slice(0, 80) + (ua.length > 80 ? '…' : ''); App.dom.uaToken.classList.remove('skeleton'); App.dom.uaToken.classList.add('resolved'); }
 
-                // WebGL GPU
                 const glCanvas = document.createElement('canvas');
                 const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
                 if (gl) {
                     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
                     if (dbg) {
                         const renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+                        const vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
                         App.resolve(App.dom.gpuVal, renderer);
+                        App.resolve(App.dom.gpuVendorVal, vendor);
                         App.state.fingerprintData.gpu = renderer;
+                        App.state.fingerprintData.gpuVendor = vendor;
                         App.updateEntropy(15);
-                    } else {
-                        App.resolve(App.dom.gpuVal, 'Info Blocked');
-                    }
-                } else {
-                    App.resolve(App.dom.gpuVal, 'WebGL Unavailable');
-                }
+                    } else { App.resolve(App.dom.gpuVal, 'Blocked'); App.resolve(App.dom.gpuVendorVal, 'Blocked'); }
+                } else { App.resolve(App.dom.gpuVal, 'WebGL N/A'); App.resolve(App.dom.gpuVendorVal, 'N/A'); }
 
-                // Battery
                 if ('getBattery' in navigator) {
                     try {
                         const battery = await navigator.getBattery();
                         const status = `${Math.round(battery.level * 100)}% ${battery.charging ? '⚡ Charging' : ''}`.trim();
-                        App.dom.batteryVal.textContent = status;
-                        App.dom.batteryVal.classList.add('risk-highlight');
+                        if (App.dom.batteryVal) { App.dom.batteryVal.textContent = status; App.dom.batteryVal.classList.add('risk-highlight'); }
                         App.log('Battery Status API exposed (deprecated in most browsers)', 'warn');
                         App.state.leaks.battery = true;
                         App.updateEntropy(5);
                     } catch { /* protected */ }
                 }
 
-                App.state.fingerprintData.hardware = { os: osStr, cores: navigator.hardwareConcurrency, res: `${width}x${height}` };
+                if (navigator.storage && navigator.storage.estimate) {
+                    try {
+                        const est = await navigator.storage.estimate();
+                        const gb = (est.quota / 1e9).toFixed(1);
+                        App.resolve(App.dom.storageVal, `${gb} GB quota`);
+                        App.state.fingerprintData.storageQuota = est.quota;
+                    } catch { App.resolve(App.dom.storageVal, 'Blocked'); }
+                } else { App.resolve(App.dom.storageVal, 'Not Available'); }
+
+                App.state.fingerprintData.hardware = { os: osStr, cores: navigator.hardwareConcurrency, ram: navigator.deviceMemory, res: `${width}x${height}`, availRes: `${availWidth}x${availHeight}`, dpr, touchPoints: touch, colorDepth };
+                App.updateEntropy(10);
             }
         },
 
         canvas: {
             run: async () => {
-                App.log('Generating canvas fingerprint (SHA-256)…', 'system');
+                App.log('Generating canvas fingerprint (SHA-256, truncated)…', 'system');
                 const hiddenCanvas = App.dom.fingerprintCanvas;
-                hiddenCanvas.width = 300;
-                hiddenCanvas.height = 150;
+                hiddenCanvas.width = 300; hiddenCanvas.height = 150;
                 const hCtx = hiddenCanvas.getContext('2d');
 
                 const drawScene = (ctx, w, h) => {
                     ctx.clearRect(0, 0, w, h);
                     ctx.textBaseline = 'alphabetic';
-                    ctx.fillStyle = '#f60';
-                    ctx.fillRect(125, 1, 62, 20);
-                    ctx.fillStyle = '#069';
-                    ctx.font = '14px Arial';
-                    ctx.fillText('Privacy', 2, 15);
-                    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-                    ctx.font = '16px Arial';
-                    ctx.fillText('Panopticon', 4, 45);
+                    ctx.fillStyle = '#f60'; ctx.fillRect(125, 1, 62, 20);
+                    ctx.fillStyle = '#069'; ctx.font = '14px Arial'; ctx.fillText('Privacy', 2, 15);
+                    ctx.fillStyle = 'rgba(102,204,0,0.7)'; ctx.font = '16px Arial'; ctx.fillText('Panopticon', 4, 45);
                     const grad = ctx.createLinearGradient(0, 0, w, 0);
-                    grad.addColorStop(0, '#6366f1');
-                    grad.addColorStop(1, '#ec4899');
-                    ctx.fillStyle = grad;
-                    ctx.fillRect(0, 60, w, 20);
-                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-                    ctx.font = '11px monospace';
-                    ctx.fillText('🕵 Unique GPU render output', 10, 75);
+                    grad.addColorStop(0, '#6366f1'); grad.addColorStop(1, '#ec4899');
+                    ctx.fillStyle = grad; ctx.fillRect(0, 60, w, 20);
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = '11px monospace';
+                    ctx.fillText('Cwm fjordbank glyphs vext quiz', 4, 78);
+                    ctx.font = '12px Georgia,serif'; ctx.fillStyle = 'rgba(99,102,241,0.9)';
+                    ctx.fillText('\u{1F575} Unique GPU render output', 4, 100);
                 };
 
                 drawScene(hCtx, 300, 150);
                 const dataURL = hiddenCanvas.toDataURL();
                 const hash = await App.sha256(dataURL);
-                App.resolve(App.dom.canvasHash, hash);
+                App.resolve(App.dom.canvasHash, hash + ' (trunc.)');
                 App.state.fingerprintData.canvasHash = hash;
                 App.updateEntropy(30);
-                App.log(`Canvas SHA-256: ${hash}`, 'danger');
+                App.log(`Canvas SHA-256 (truncated): ${hash}`, 'danger');
 
-                // FIX #1: canvasPreview is now properly cached and used
                 const preview = App.dom.canvasPreview;
                 if (preview) {
                     const container = preview.parentElement;
                     const w = container ? container.offsetWidth || 300 : 300;
-                    preview.width  = w;
-                    preview.height = 96;
-                    const pCtx = preview.getContext('2d');
-                    drawScene(pCtx, w, 96);
+                    preview.width = w; preview.height = 96;
+                    drawScene(preview.getContext('2d'), w, 96);
                 }
             }
         },
@@ -1390,10 +1013,7 @@ const App = {
             run: () => new Promise(resolve => {
                 try {
                     const AudioCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-                    if (!AudioCtx) {
-                        App.resolve(App.dom.audioHash, 'Not Supported');
-                        return resolve();
-                    }
+                    if (!AudioCtx) { App.resolve(App.dom.audioHash, 'Not Supported'); return resolve(); }
                     const context = new AudioCtx(1, 44100, 44100);
                     const oscillator = context.createOscillator();
                     oscillator.type = 'triangle';
@@ -1405,104 +1025,205 @@ const App = {
                     context.startRendering().then(async buffer => {
                         const raw = buffer.getChannelData(0).slice(0, 5000).toString();
                         const hash = await App.sha256(raw);
-                        App.resolve(App.dom.audioHash, hash);
+                        App.resolve(App.dom.audioHash, hash + ' (trunc.)');
                         App.state.fingerprintData.audioHash = hash;
                         App.updateEntropy(15);
-                        App.log(`Audio SHA-256: ${hash}`, 'danger');
+                        App.log(`Audio SHA-256 (truncated): ${hash}`, 'danger');
                         resolve();
-                    }).catch(() => {
-                        App.resolve(App.dom.audioHash, 'Blocked');
-                        resolve();
-                    });
-                } catch {
-                    App.resolve(App.dom.audioHash, 'Not Supported');
-                    resolve();
-                }
+                    }).catch(() => { App.resolve(App.dom.audioHash, 'Blocked'); resolve(); });
+                } catch { App.resolve(App.dom.audioHash, 'Not Supported'); resolve(); }
             })
+        },
+
+        advancedSignals: {
+            run: async () => {
+                const langs = navigator.languages || [navigator.language || 'unknown'];
+                if (App.dom.langVal) App.dom.langVal.textContent = langs.slice(0, 4).join(', ');
+                App.state.fingerprintData.languages = langs;
+
+                const dnt = navigator.doNotTrack || window.doNotTrack;
+                if (App.dom.dntVal) App.dom.dntVal.textContent = dnt === '1' ? '1 (Enabled — usually ignored)' : dnt === '0' ? '0 (Disabled)' : `Unset`;
+                App.state.fingerprintData.doNotTrack = dnt;
+
+                const gpc = navigator.globalPrivacyControl;
+                if (App.dom.gpcVal) App.dom.gpcVal.textContent = gpc === true ? 'Enabled' : gpc === false ? 'Disabled' : 'Not Set';
+                App.state.fingerprintData.gpc = gpc;
+
+                const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const scheme = darkMode ? 'Dark' : window.matchMedia('(prefers-color-scheme: light)').matches ? 'Light' : 'No Preference';
+                if (App.dom.colorSchemeVal) App.dom.colorSchemeVal.textContent = scheme;
+                App.state.fingerprintData.colorScheme = scheme;
+
+                const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (App.dom.reducedMotionVal) App.dom.reducedMotionVal.textContent = reducedMotion ? 'Reduce (enabled)' : 'No Preference';
+                App.state.fingerprintData.reducedMotion = reducedMotion;
+
+                const pluginCount = navigator.plugins ? navigator.plugins.length : 0;
+                if (App.dom.pluginsVal) App.dom.pluginsVal.textContent = `${pluginCount} plugin${pluginCount !== 1 ? 's' : ''}`;
+                App.state.fingerprintData.plugins = pluginCount;
+
+                await App.modules.advancedSignals.probeFonts();
+                App.updateEntropy(10);
+            },
+
+            probeFonts: async () => {
+                const testFonts = [
+                    'Arial','Arial Black','Calibri','Cambria','Century Gothic','Comic Sans MS',
+                    'Consolas','Courier New','Franklin Gothic Medium','Futura','Garamond',
+                    'Geneva','Georgia','Gill Sans','Helvetica','Impact','Lucida Console',
+                    'Lucida Sans Unicode','Meiryo','Menlo','Microsoft Sans Serif',
+                    'Monaco','Palatino Linotype','Segoe UI','Tahoma','Times New Roman',
+                    'Trebuchet MS','Verdana','Wingdings','Hiragino Sans','Osaka',
+                    'Apple SD Gothic Neo','Malgun Gothic','Yu Gothic',
+                ];
+                const canvas = App.dom.fontProbeCanvas;
+                if (!canvas) { if (App.dom.fontsVal) App.resolve(App.dom.fontsVal, 'N/A'); return; }
+                const ctx = canvas.getContext('2d');
+                const BASELINE = 'monospace';
+                const TEXT = 'mmmmmmmmmmlli';
+                ctx.font = `16px ${BASELINE}`;
+                const baseWidth = ctx.measureText(TEXT).width;
+                const getWidth = (font) => { ctx.font = `16px ${font}, ${BASELINE}`; return ctx.measureText(TEXT).width; };
+                const detected = testFonts.filter(f => getWidth(f) !== baseWidth);
+                App.resolve(App.dom.fontsVal, `${detected.length}/${testFonts.length} detected`);
+                App.state.fingerprintData.fontsDetected = detected.length;
+                App.state.fingerprintData.fontsList = detected;
+                if (detected.length > 10) App.updateEntropy(15);
+                else if (detected.length > 4) App.updateEntropy(8);
+                else App.updateEntropy(3);
+                App.log(`Font enumeration: ${detected.length} fonts detected`, 'system');
+            }
+        },
+
+        webglDeep: {
+            run: async () => {
+                const glCanvas = document.createElement('canvas');
+                const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+                if (!gl) {
+                    ['glMaxTexture','glShaderPrec','glMaxViewport','glExtensions','glAntialias'].forEach(id => App.resolve(App.dom[id], 'WebGL N/A'));
+                    return;
+                }
+                const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+                App.resolve(App.dom.glMaxTexture, `${maxTex}px`);
+                App.state.fingerprintData.glMaxTexture = maxTex;
+
+                const precInfo = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+                App.resolve(App.dom.glShaderPrec, precInfo ? `R:${precInfo.rangeMin}–${precInfo.rangeMax} P:${precInfo.precision}` : 'N/A');
+
+                const vp = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+                App.resolve(App.dom.glMaxViewport, `${vp[0]}x${vp[1]}`);
+                App.state.fingerprintData.glMaxViewport = `${vp[0]}x${vp[1]}`;
+
+                const exts = gl.getSupportedExtensions() || [];
+                App.resolve(App.dom.glExtensions, `${exts.length} extensions`);
+                App.state.fingerprintData.glExtensionCount = exts.length;
+                App.state.fingerprintData.glExtensions = exts;
+
+                const aa = !!(gl.getContextAttributes() && gl.getContextAttributes().antialias);
+                App.resolve(App.dom.glAntialias, aa ? 'Yes' : 'No');
+                App.state.fingerprintData.glAntialias = aa;
+
+                App.updateEntropy(10);
+                App.log('WebGL deep scan complete', 'system');
+            }
         },
 
         behavior: {
             run: () => new Promise(resolve => {
                 const mouseCanvas = App.dom.mouseMap;
                 let mCtx = mouseCanvas ? mouseCanvas.getContext('2d') : null;
+                let heatPoints = [];
 
-                // FIX #7: ResizeObserver keeps mouseMap pixel-crisp
                 if (mouseCanvas) {
                     const syncSize = () => {
-                        const w = mouseCanvas.offsetWidth  || 300;
+                        const w = mouseCanvas.offsetWidth || 300;
                         const h = mouseCanvas.offsetHeight || 96;
                         if (mouseCanvas.width !== w || mouseCanvas.height !== h) {
-                            mouseCanvas.width  = w;
-                            mouseCanvas.height = h;
+                            mouseCanvas.width = w; mouseCanvas.height = h;
                             mCtx = mouseCanvas.getContext('2d');
+                            heatPoints.forEach(p => drawHeat(p.x, p.y, 'rgba(99,102,241,0.2)', 18));
                         }
                     };
                     syncSize();
-                    try {
-                        new ResizeObserver(syncSize).observe(mouseCanvas);
-                    } catch { /* not available in all browsers */ }
+                    try { new ResizeObserver(syncSize).observe(mouseCanvas); } catch { /**/ }
                 }
 
-                // Timer
+                function drawHeat(x, y, color, radius) {
+                    if (!mCtx || !mouseCanvas) return;
+                    const r = mCtx.createRadialGradient(x, y, 0, x, y, radius);
+                    r.addColorStop(0, color);
+                    r.addColorStop(1, 'rgba(0,0,0,0)');
+                    mCtx.fillStyle = r;
+                    mCtx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+                }
+
                 App.state._timerInterval = setInterval(() => {
                     const s = Math.floor((Date.now() - App.state.startTime) / 1000);
-                    if (App.dom.timeOnPage) {
-                        App.dom.timeOnPage.textContent = s >= 60
-                            ? `${Math.floor(s / 60)}m ${s % 60}s`
-                            : `${s}s`;
-                    }
+                    if (App.dom.timeOnPage) App.dom.timeOnPage.textContent = s >= 60 ? `${Math.floor(s/60)}m ${s%60}s` : `${s}s`;
                 }, 1000);
 
-                // Mouse tracking
                 let lastMove = 0;
                 document.addEventListener('mousemove', e => {
                     if (App.dom.mousePos) App.dom.mousePos.textContent = `${e.clientX}, ${e.clientY}`;
                     const now = Date.now();
                     if (now - lastMove < 50) return;
                     lastMove = now;
-                    if (mCtx && mouseCanvas) {
-                        const x = (e.clientX / window.innerWidth)  * mouseCanvas.width;
+                    if (mouseCanvas) {
+                        const x = (e.clientX / window.innerWidth) * mouseCanvas.width;
                         const y = (e.clientY / window.innerHeight) * mouseCanvas.height;
-                        mCtx.fillStyle = 'rgba(99,102,241,0.45)';
-                        mCtx.beginPath();
-                        mCtx.arc(x, y, 2, 0, Math.PI * 2);
-                        mCtx.fill();
+                        heatPoints.push({x, y});
+                        if (heatPoints.length > 300) heatPoints.shift();
+                        drawHeat(x, y, 'rgba(99,102,241,0.22)', 18);
                     }
                 });
 
-                // Keystroke counter
+                document.addEventListener('click', e => {
+                    App.state.clickCount++;
+                    if (App.dom.clickCount) App.dom.clickCount.textContent = App.state.clickCount;
+                    if (mouseCanvas) {
+                        const x = (e.clientX / window.innerWidth) * mouseCanvas.width;
+                        const y = (e.clientY / window.innerHeight) * mouseCanvas.height;
+                        drawHeat(x, y, 'rgba(236,72,153,0.55)', 10);
+                    }
+                });
+
                 document.addEventListener('keydown', () => {
                     App.state.keyCount++;
                     if (App.dom.keyCount) App.dom.keyCount.textContent = App.state.keyCount;
                 });
+
+                const trackScroll = () => {
+                    const scrolled = window.scrollY + window.innerHeight;
+                    const total = document.documentElement.scrollHeight;
+                    const pct = Math.min(Math.round((scrolled / total) * 100), 100);
+                    if (App.dom.scrollDepth) App.dom.scrollDepth.textContent = `${pct}%`;
+                };
+                window.addEventListener('scroll', trackScroll, { passive: true });
+                trackScroll();
 
                 resolve();
             })
         }
     },
 
-    /* ─── SCAN COMPLETE ────────────────────────────────────────── */
     scanComplete() {
-        this.dom.scanDot?.classList.add('done');
+        if (this.dom.scanDot) this.dom.scanDot.classList.add('done');
         if (this.dom.scanStatusText) this.dom.scanStatusText.textContent = 'Scan Complete';
         this.log('All diagnostic modules complete', 'system');
     },
 
-    /* ─── SECURITY ANALYSIS ─────────────────────────────────────── */
     generateDeepInsights() {
         const container = this.dom.securityRecommendations;
         if (!container) return;
         container.innerHTML = '';
-
         let count = 0;
+
         const rec = (level, icon, title, desc, action, delay = 0) => {
             count++;
             container.insertAdjacentHTML('beforeend', `
                 <div class="rec-card ${level}" style="animation-delay:${delay}s">
                     <div class="rec-title">${icon}
-                        <span class="text-${level === 'critical' ? 'danger' : level === 'medium' ? 'warn' : 'success'}">
-                            ${level.toUpperCase()}
-                        </span> — ${title}
+                        <span class="text-${level === 'critical' ? 'danger' : level === 'medium' ? 'warn' : 'success'}">${level.toUpperCase()}</span> — ${title}
                     </div>
                     <div class="rec-desc">${desc}</div>
                     <div class="rec-action">${action}</div>
@@ -1515,30 +1236,43 @@ const App = {
                 'Firefox: about:config → media.peerconnection.enabled = false', 0);
         }
 
-        // FIX #3: entropy ceiling is 135 (sum of all real module points)
-        const entropyPct = (this.state.entropy / 135) * 100;
-        if (entropyPct >= 85) {
+        const MAX_ENTROPY = 200;
+        const entropyPct = (this.state.entropy / MAX_ENTROPY) * 100;
+        if (entropyPct >= 70) {
             rec('critical', '🔴', 'Extreme Fingerprinting Risk',
-                `Your entropy score is ${this.state.entropy}/135 — you are almost certainly unique across all browser users.`,
-                'Use Firefox + privacy.resistFingerprinting = true', 0.08);
-        } else if (entropyPct >= 55) {
+                `Your entropy score is ${this.state.entropy} pts — your browser profile is highly unique. Clearing cookies won't help.`,
+                'Use Firefox + privacy.resistFingerprinting = true, or Tor Browser', 0.08);
+        } else if (entropyPct >= 40) {
             rec('medium', '🟡', 'Elevated Fingerprinting Risk',
-                `Your entropy score is ${this.state.entropy}/135 — your browser profile is moderately identifying.`,
+                `Your entropy score is ${this.state.entropy} pts — your browser profile is moderately identifying.`,
                 'Install Canvas Blocker or Privacy Badger extension', 0.08);
         }
 
         if (this.state.leaks.battery) {
             rec('medium', '🟡', 'Deprecated Battery Status API Exposed',
-                'Your browser exposes battery level and charging status. This API has been deprecated due to privacy concerns.',
+                'Your browser exposes battery level and charging status — deprecated specifically due to fingerprinting abuse.',
                 'Update to the latest version of your browser', 0.16);
         }
 
-        // FIX #6: read ISP from fingerprintData, not DOM text
         const isp = this.state.fingerprintData.identity?.org;
         if (isp && isp !== 'Unknown') {
             rec('medium', '🟡', 'DNS / ISP Visibility',
-                `Your ISP (${isp}) can see your DNS requests and browsing activity in plaintext without Secure DNS.`,
+                `Your ISP (${isp}) can see your DNS requests and browsing activity without Secure DNS.`,
                 'Enable DNS-over-HTTPS (DoH) in your browser privacy settings', 0.24);
+        }
+
+        const fonts = this.state.fingerprintData.fontsDetected;
+        if (fonts > 10) {
+            rec('medium', '🟡', 'High Font Entropy Detected',
+                `${fonts} fonts detected — font enumeration is one of the highest-entropy tracking vectors.`,
+                'Use Firefox with privacy.resistFingerprinting for font protection', 0.32);
+        }
+
+        const dnt = this.state.fingerprintData.doNotTrack;
+        if (dnt === '1') {
+            rec('info', '⚪', 'Do Not Track Enabled — But Ignored',
+                'You have DNT=1 set, but there is no legal enforcement in most countries. Having it set is itself a fingerprinting signal.',
+                'DNT is ineffective — use uBlock Origin instead', 0.40);
         }
 
         if (count === 0) {
@@ -1550,7 +1284,6 @@ const App = {
                 </div>`);
         }
 
-        // Update badge
         if (this.dom.securityBadge) {
             this.dom.securityBadge.className = 'badge badge-blue';
             this.dom.securityBadge.innerHTML = `<span class="badge-dot"></span>${count} Finding${count !== 1 ? 's' : ''}`;
@@ -1559,69 +1292,44 @@ const App = {
         this.log(`Security report generated: ${count} finding(s)`, 'system');
     },
 
-    /* ─── ENTROPY ───────────────────────────────────────────────── */
     updateEntropy(points) {
-        // FIX #3: real ceiling is 135 (50+20+15+30+15+5)
-        const MAX_ENTROPY = 135;
+        const MAX_ENTROPY = 200;
         this.state.entropy = Math.min(this.state.entropy + points, MAX_ENTROPY);
-
-        // FIX #13: animate displayed counter from current value to new target
         if (this.state._entropyRAF) cancelAnimationFrame(this.state._entropyRAF);
-        const startVal    = this.state.displayedEntropy;
-        const targetVal   = this.state.entropy;
-        const startTime   = performance.now();
-        const duration    = 800;
+        const startVal = this.state.displayedEntropy;
+        const targetVal = this.state.entropy;
+        const startTime = performance.now();
+        const duration = 800;
 
         const tick = (now) => {
-            const elapsed  = now - startTime;
+            const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            // ease-out cubic
-            const eased    = 1 - Math.pow(1 - progress, 3);
-            const current  = Math.round(startVal + (targetVal - startVal) * eased);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(startVal + (targetVal - startVal) * eased);
             this.state.displayedEntropy = current;
-
             if (this.dom.entropyScore) this.dom.entropyScore.textContent = current;
 
             const pct = (targetVal / MAX_ENTROPY) * 100;
             if (this.dom.entropyBar) {
                 this.dom.entropyBar.style.width = `${pct}%`;
-                this.dom.entropyBar.style.background =
-                    pct < 35 ? 'var(--accent-success)' :
-                    pct < 65 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+                this.dom.entropyBar.style.background = pct < 35 ? 'var(--accent-success)' : pct < 65 ? 'var(--accent-warning)' : 'var(--accent-danger)';
             }
             if (this.dom.entropyScore) {
-                this.dom.entropyScore.style.color =
-                    pct < 35 ? 'var(--accent-success)' :
-                    pct < 65 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+                this.dom.entropyScore.style.color = pct < 35 ? 'var(--accent-success)' : pct < 65 ? 'var(--accent-warning)' : 'var(--accent-danger)';
             }
             if (this.dom.scoreTier) {
-                if (pct < 35) {
-                    this.dom.scoreTier.textContent = 'Low Risk';
-                    this.dom.scoreTier.style.cssText = 'background:rgba(16,185,129,0.12);color:var(--accent-success)';
-                } else if (pct < 55) {
-                    this.dom.scoreTier.textContent = 'Moderate Risk';
-                    this.dom.scoreTier.style.cssText = 'background:rgba(245,158,11,0.12);color:var(--accent-warning)';
-                } else if (pct < 80) {
-                    this.dom.scoreTier.textContent = 'High Risk';
-                    this.dom.scoreTier.style.cssText = 'background:rgba(239,68,68,0.12);color:var(--accent-danger)';
-                } else {
-                    this.dom.scoreTier.textContent = 'Extreme Risk';
-                    this.dom.scoreTier.style.cssText = 'background:rgba(239,68,68,0.2);color:var(--accent-danger)';
-                }
+                if (pct < 35) { this.dom.scoreTier.textContent = 'Low Risk'; this.dom.scoreTier.style.cssText = 'background:rgba(16,185,129,0.12);color:var(--accent-success)'; }
+                else if (pct < 55) { this.dom.scoreTier.textContent = 'Moderate Risk'; this.dom.scoreTier.style.cssText = 'background:rgba(245,158,11,0.12);color:var(--accent-warning)'; }
+                else if (pct < 80) { this.dom.scoreTier.textContent = 'High Risk'; this.dom.scoreTier.style.cssText = 'background:rgba(239,68,68,0.12);color:var(--accent-danger)'; }
+                else { this.dom.scoreTier.textContent = 'Extreme Risk'; this.dom.scoreTier.style.cssText = 'background:rgba(239,68,68,0.2);color:var(--accent-danger)'; }
             }
-
-            // Unique user estimate
             const users = Math.min(Math.floor(Math.pow(2, targetVal / 6)), 1e15);
             if (this.dom.uniqueRatio) this.dom.uniqueRatio.textContent = users.toLocaleString();
-
-            if (progress < 1) {
-                this.state._entropyRAF = requestAnimationFrame(tick);
-            }
+            if (progress < 1) this.state._entropyRAF = requestAnimationFrame(tick);
         };
         this.state._entropyRAF = requestAnimationFrame(tick);
     },
 
-    /* ─── LOGGING ───────────────────────────────────────────────── */
     log(msg, type = 'normal') {
         if (!this.dom.consoleLog) return;
         const div = document.createElement('div');
@@ -1629,16 +1337,12 @@ const App = {
         const time = new Date().toLocaleTimeString('en-US', { hour12: false });
         div.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
         this.dom.consoleLog.prepend(div);
-
-        // FIX #14: cap log at 50 entries
-        while (this.dom.consoleLog.children.length > 50) {
-            this.dom.consoleLog.lastChild.remove();
-        }
+        while (this.dom.consoleLog.children.length > 50) this.dom.consoleLog.lastChild.remove();
     },
 
-    /* ─── CHART ─────────────────────────────────────────────────── */
     chart: null,
     initChart() {
+        if (window._chartFailed) return;
         const el = document.getElementById('pingChart');
         if (!el) return;
         const ctx = el.getContext('2d');
@@ -1648,56 +1352,30 @@ const App = {
         gradient.addColorStop(1, 'rgba(99,102,241,0)');
         this.chart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: Array(20).fill(''),
-                datasets: [{
-                    data: Array(20).fill(null),
-                    borderColor: '#6366f1',
-                    backgroundColor: gradient,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: true,
-                    tension: 0.4,
-                    spanGaps: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: {
-                    x: { display: false },
-                    y: {
-                        display: true,
-                        grid: { color: 'rgba(255,255,255,0.04)' },
-                        ticks: { color: '#555f72', font: { size: 10 } }
-                    }
-                },
-                animation: { duration: 200 }
-            }
+            data: { labels: Array(20).fill(''), datasets: [{ data: Array(20).fill(null), borderColor: '#6366f1', backgroundColor: gradient, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4, spanGaps: true }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555f72', font: { size: 10 } } } }, animation: { duration: 200 } }
         });
     },
 
     updateChart(val) {
         if (!this.chart) return;
         const d = this.chart.data.datasets[0].data;
-        d.push(val);
-        d.shift();
+        d.push(val); d.shift();
         this.chart.update();
     },
 
-    /* ─── INIT UI ───────────────────────────────────────────────── */
     initUI() {
         if (this.dom.consoleLog) this.dom.consoleLog.innerHTML = '';
         if (this.dom.entropyScore) this.dom.entropyScore.textContent = '0';
     },
 
-    /* ─── CLEANUP ───────────────────────────────────────────────── */
     destroy() {
         if (this.state._pingInterval) clearInterval(this.state._pingInterval);
         if (this.state._timerInterval) clearInterval(this.state._timerInterval);
         if (this.state._entropyRAF) cancelAnimationFrame(this.state._entropyRAF);
+        if (this.state._webRTCLeakTimeout) clearTimeout(this.state._webRTCLeakTimeout);
         if (this.chart) this.chart.destroy();
+        this.state._pendingFetches.forEach(ctrl => { try { ctrl.abort(); } catch { /**/ } });
     }
 };
 
